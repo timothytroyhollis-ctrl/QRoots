@@ -47,6 +47,64 @@ Codex generated pull_acs_tract_data.py, including config loading, county-level b
 ---
 
 ## Prompt 003 — Eviction Lab Ingestion Script
-*(Coming next)*
+**Date:** 2026-03-26  
+**Purpose:** Generate a local CSV ingestion script for Eviction Lab validated tract-level data.
 
----
+**Prompt:**  
+Now write a SEPARATE new Python script called pull_evictionlab_data.py that processes the 
+Eviction Lab data. This script should NOT call any API. It only reads a local CSV file from 
+data/raw/all-tracts.csv using pandas. Fields to retain: GEOID, year, eviction-filing-rate, 
+eviction-rate, eviction-filings, evictions, renter-occupied-homes, poverty-rate. Filter to 
+the most recent available year in the dataset. Standardize the GEOID column to 11 digits with 
+zero-padding. Replace any -1 values with NaN as these are Eviction Lab sentinel values for 
+missing data. Output a clean pandas DataFrame saved to data/processed/evictionlab_tract_data.csv 
+and print the row count and year filtered to.
+
+**Codex Output Summary:**  
+Codex generated pull_evictionlab_data.py as a fully local script with no API calls. Script 
+included sentinel value replacement, dynamic most-recent-year filtering, GEOID zero-padding, 
+and automatic creation of the data/processed/ output directory.
+
+**Key Design Decisions:**  
+- No API calls — Eviction Lab requires manual download and terms of use agreement  
+- Filters dynamically to most recent year rather than hardcoding, future-proofing the script  
+- OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True) auto-creates output folder if missing  
+- Regex extract on GEOID handles any unexpected formatting in the raw file
+
+**Real-World Discovery:**  
+Column names in all-tracts.csv use dot notation (eviction.filing.rate) not dashes as 
+documented. Required a manual fix to KEEP_COLUMNS after running and catching the ValueError. 
+Most recent validated year in the dataset is 2016 — a known Eviction Lab coverage limitation, 
+not a script error. Output: 15,217 tract rows saved to data/processed/evictionlab_tract_data.csv.
+
+## Prompt 004 — HUD Fair Market Rent Ingestion Script
+**Date:** 2026-03-26  
+**Purpose:** Generate a HUD Fair Market Rent API ingestion script at the metro area level.
+
+**Prompt:**  
+Write a Python script called pull_hud_fmr_data.py that downloads HUD Fair Market Rent data 
+for fiscal year 2022. Use the HUD API to fetch FMR data at the county level for all states. 
+Fields to retain: fips_code, county_name, state_code, fmr_0br, fmr_1br, fmr_2br, fmr_3br, 
+fmr_4br. Standardize the fips_code column to 5 digits with zero-padding. Output a clean 
+pandas DataFrame saved to data/processed/hud_fmr_data.csv and print the row count.
+
+**Codex Output Summary:**  
+Codex searched the HUD API docs before writing the script, identified the correct Bearer 
+token auth pattern, and used the statedata endpoint to fetch metro area FMR records 
+state by state. Script compiled successfully but required two fixes before running.
+
+**Key Design Decisions:**  
+- Bearer token loaded from hud_config.json, mirroring the census_config.json pattern
+- State-by-state fetching chosen to avoid pagination issues on a single large request
+- FMR captured across all bedroom sizes (0-4br) for maximum feature flexibility in modeling
+
+**Real-World Discoveries:**  
+- HUD API returns a flat list from /listStates, not a nested payload["data"]["states"] 
+  structure as Codex assumed. Fixed fetch_states to return payload directly.
+- County endpoint returns metroareas not counties, and uses code not fips_code as the 
+  identifier. Fixed fetch_state_counties and build_dataframe rename map accordingly.
+- HUD FMR data is at metro area level not tract level. Merge strategy: join on first 5 
+  digits of tract GEOID to county FIPS during the merge script.
+- Output: 4,765 metro area rows saved to data/processed/hud_fmr_data.csv.
+
+**Next:** Prompt 005 — CDC PLACES Ingestion Script
