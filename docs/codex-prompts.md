@@ -170,4 +170,60 @@ API, and implemented defensive error handling for missing series. Script compile
 - fredapi already installed in DSC630 environment from prior coursework.
 - Script runs one API call per county — estimated 30-60 minutes for full national pull.
 
-**Next:** Prompt 007 — Master Merge Script
+## Prompt 007 — Master Merge Script
+**Date:** 2026-03-27  
+**Purpose:** Generate a script that merges all five processed data sources into a single 
+tract-level master dataset for modeling.
+
+**Prompt:**  
+Write a Python script called build_master_dataset.py that merges five processed datasets 
+into a single tract-level master CSV. Load these files: data/processed/acs_tract_data.csv, 
+data/processed/evictionlab_tract_data.csv, data/processed/cdc_places_data.csv, 
+data/processed/hud_fmr_data.csv, data/processed/fred_data.csv. The merge key is GEOID for 
+tract-level sources. For HUD and FRED which are at county level, join on the first 5 digits 
+of GEOID as county_fips. Start with ACS as the base and left join all other sources. After 
+merging print row count, column list, and null counts for every column. Save to 
+data/processed/master_dataset.csv.
+
+**Codex Output Summary:**  
+Codex generated build_master_dataset.py with separate loaders for tract-level and 
+county-level sources, derived county_fips from first 5 digits of GEOID, and implemented 
+left joins for all five sources against the ACS base.
+
+**Key Design Decisions:**  
+- ACS chosen as base for left joins to preserve all 85,396 tracts
+- Separate load functions for tract vs county level files
+- county_fips derived from first 5 digits of GEOID for HUD and FRED joins
+- Null counts printed for all columns to expose join quality before modeling
+
+**Real-World Discoveries:**  
+- FRED unemployment series pattern {fips_code}UR (e.g. 01001UR) returned HTTP 400 Bad 
+  Request — series does not exist in FRED. Pattern was incorrect.
+- ACS already provides unemployment_rate_proxy at tract level which is more granular 
+  than county-level FRED data. FRED dropped entirely in favor of ACS unemployment.
+- HUD metro area codes (METRO11500M11500) cannot join on 5-digit county FIPS — 82,908 
+  of 85,407 rows returned null for all HUD columns. Join strategy fundamentally broken.
+- Row count of 85,407 instead of expected 85,396 indicates 11 duplicate tracts.
+
+## Prompt 008 — Clean Master Merge Script
+**Date:** 2026-03-27  
+**Purpose:** Remove broken HUD and FRED sources, deduplicate master dataset.
+
+**Prompt:**  
+Update build_master_dataset.py to remove HUD Fair Market Rent as a data source. Delete 
+HUD_PATH, hud_df, and the HUD merge step. Also add a deduplication step after all merges 
+using drop_duplicates on GEOID keeping the first occurrence. The final sources are ACS, 
+Eviction Lab, and CDC PLACES only. Save to data/processed/master_dataset.csv and print 
+row count, columns, and null counts.
+
+**Codex Output Summary:**  
+*(To be filled in after Codex generates the updated script)*
+
+**Key Design Decisions:**  
+- HUD dropped due to metro-area join key mismatch with tract-level GEOID
+- FRED dropped in Prompt 007 revision — ACS unemployment_rate_proxy is sufficient
+- Deduplication on GEOID keeps first occurrence to resolve 11 duplicate tract rows
+- Final three sources: ACS (85,396 tracts), Eviction Lab (15,217 tracts), CDC PLACES 
+  (78,815 tracts)
+
+**Next:** Prompt 009 — Feature Engineering and Target Variable Creation
