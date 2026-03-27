@@ -1,5 +1,6 @@
 census_config.json
 hud_config.json
+fred_config.json
 data/raw/
 data/processed/
 *.csv

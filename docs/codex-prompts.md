@@ -107,4 +107,67 @@ state by state. Script compiled successfully but required two fixes before runni
   digits of tract GEOID to county FIPS during the merge script.
 - Output: 4,765 metro area rows saved to data/processed/hud_fmr_data.csv.
 
-**Next:** Prompt 005 — CDC PLACES Ingestion Script
+## Prompt 005 — CDC PLACES Ingestion Script
+**Date:** 2026-03-26  
+**Purpose:** Generate a local CSV ingestion script for CDC PLACES census tract health data.
+
+**Prompt:**  
+Write a Python script called pull_cdc_places_data.py that processes CDC PLACES census 
+tract-level health data. The script should read a local CSV file from data/raw/PLACES__
+Local_Data_for_Better_Health,_Census_Tract_Data,_2025_release_20260326.csv using pandas. 
+Fields to retain: LocationID, StateAbbr, StateDesc, LocationName, Category, Measure, 
+Data_Value, TotalPopulation. Filter rows where Measure is in target measures list. Rename 
+LocationID to GEOID and standardize to 11 digits with zero-padding. Pivot the data so each 
+measure becomes its own column. Output a clean pandas DataFrame saved to 
+data/processed/cdc_places_data.csv and print the row count.
+
+**Codex Output Summary:**  
+Codex generated pull_cdc_places_data.py with pivot table logic, GEOID standardization, 
+and automatic output directory creation. Script compiled cleanly on first pass.
+
+**Key Design Decisions:**  
+- Pivot table approach converts long-format CDC data to one row per tract
+- Category filter removed after discovering 2025 release organizes measures differently
+- TotalPopulation dropped from pivot index after causing row collapse to only 602 rows
+- Final pivot index uses only GEOID and StateAbbr for clean one-row-per-tract output
+
+**Real-World Discoveries:**  
+- CDC PLACES 2025 release uses different measure names than documented. Original prompt 
+  specified "Mental Health Not Good for >=14 Days" but actual name is "Frequent mental 
+  distress among adults". All three measure names required correction.
+- TotalPopulation had multiple values per tract causing pivot collapse from 78,815 to 
+  602 rows. Fixed by removing TotalPopulation from pivot index.
+- Output: 78,815 tract rows saved to data/processed/cdc_places_data.csv with three 
+  health indicator columns.
+
+## Prompt 006 — BLS/FRED Economic Indicators Ingestion Script
+**Date:** 2026-03-26  
+**Purpose:** Generate a FRED API ingestion script for county-level unemployment rates.
+
+**Prompt:**  
+Write a Python script called pull_fred_data.py that downloads county-level unemployment 
+rate data for all US counties using the FRED API from the St. Louis Fed. Use the fredapi 
+Python library. Load the FRED API key from a file called fred_config.json with key name 
+api_key. For each county fetch the most recent annual unemployment rate using the series 
+ID pattern XXXUR where XXX is the county FIPS code. Collect all counties into a single 
+DataFrame with columns: fips_code, county_name, unemployment_rate. Zero-pad fips_code to 
+5 digits. Save output to data/processed/fred_data.csv and print the row count.
+
+**Codex Output Summary:**  
+Codex searched for FRED series ID patterns before writing, built county list from Census 
+API, and implemented defensive error handling for missing series. Script compiled cleanly.
+
+**Key Design Decisions:**  
+- One API call per county chosen over bulk download for maximum series coverage
+- Defensive try/except returns pd.NA instead of crashing on missing county series
+- County list sourced from Census API to stay consistent with ACS pattern
+- Progress printing added every 100 counties given 3000+ API calls expected
+
+**Real-World Discoveries:**  
+- Python 3.11 does not support float | pd.NA union type hint syntax. Fixed by removing 
+  type hints from fetch_latest_unemployment_rate and unemployment_rates list.
+- series_id variable was dropped during type hint fix and had to be restored manually.
+- fredapi already installed in DSC630 environment from prior coursework.
+- Script runs one API call per county — estimated 30-60 minutes for full national pull.
+
+**Next:** Prompt 007 — Master Merge Script
