@@ -265,4 +265,34 @@ median imputation applied after labeling, and clean deduplication on GEOID.
 - Zero nulls after median imputation across all 10 feature columns
 - Output: 12,694 rows saved to data/processed/modeling_dataset.csv
 
-**Next:** Prompt 010 — Model Training (Logistic Regression + XGBoost)
+## Prompt 010 — Model Training (Logistic Regression + XGBoost)
+**Date:** 2026-03-27  
+**Purpose:** Train and evaluate binary classification models to predict high eviction risk.
+
+**Prompt:**  
+Write a Python script called train_model.py that trains a binary classification model on 
+data/processed/modeling_dataset.csv to predict high_eviction_risk. Steps: load the dataset, 
+split into train/test sets (80/20, random_state=42, stratified on target). Train a logistic 
+regression baseline model with class_weight='balanced'. Then train an XGBoost classifier 
+with class_weight='balanced' equivalent using scale_pos_weight. Evaluate both models with 
+classification_report, F1 score, and AUC-ROC on the test set. Print all metrics clearly. 
+Save the best performing model as models/xgboost_model.pkl and the feature column list as 
+models/feature_columns.pkl using joblib.
+
+**Codex Output Summary:**  
+Codex generated train_model.py with stratified split, dynamic scale_pos_weight calculation, 
+side-by-side evaluation of both models, and conditional save of whichever model wins on F1.
+
+**Key Design Decisions:**  
+- Stratified split preserves 67/33 class balance in both train and test sets
+- scale_pos_weight calculated dynamically from actual class counts not hardcoded
+- Best model saved by F1 score not assumed to be XGBoost
+- Feature columns saved separately as models/feature_columns.pkl for API use later
+
+**Results:**  
+- Logistic Regression: F1 0.5461, AUC-ROC 0.6951
+- XGBoost: F1 0.6587, AUC-ROC 0.8103
+- XGBoost won and saved to models/xgboost_model.pkl
+- AUC-ROC of 0.81 is considered strong for social science prediction problems
+
+**Next:** Prompt 011 — SHAP Explainability Layer
