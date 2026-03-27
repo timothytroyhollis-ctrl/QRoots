@@ -226,4 +226,43 @@ row count, columns, and null counts.
 - Final three sources: ACS (85,396 tracts), Eviction Lab (15,217 tracts), CDC PLACES 
   (78,815 tracts)
 
-**Next:** Prompt 009 — Feature Engineering and Target Variable Creation
+## Prompt 009 — Feature Engineering and Target Variable Creation
+**Date:** 2026-03-27  
+**Purpose:** Transform master dataset into a clean modeling-ready dataset with target 
+variable and imputed features.
+
+**Prompt:**  
+Write a Python script called build_features.py that prepares the master dataset for 
+machine learning. Load data/processed/master_dataset.csv. Create a binary target variable 
+called high_eviction_risk: tracts in the top 33rd percentile of eviction.filing.rate 
+within their state are labeled 1 (high risk), all others are labeled 0 (low risk). Drop 
+rows where eviction.filing.rate is null since these cannot be labeled. Select these feature 
+columns for modeling: median_household_income, rent_burden_35_plus_share, 
+renter_occupied_units, total_housing_units, unemployment_rate_proxy, median_gross_rent, 
+poverty.rate, depression_among_adults, fair_poor_health_status, frequent_mental_distress. 
+Impute missing values using median imputation for all feature columns. Save the final 
+modeling dataset to data/processed/modeling_dataset.csv with GEOID, all features, and 
+the target variable. Print row count, class balance, and null counts after imputation.
+
+**Codex Output Summary:**  
+Codex generated build_features.py with defensive column aliasing to handle dot vs 
+underscore naming differences across sources, state-relative percentile thresholding, 
+median imputation applied after labeling, and clean deduplication on GEOID.
+
+**Key Design Decisions:**  
+- State-relative 67th percentile threshold chosen over national threshold so tracts are 
+  compared within their own state context — a 40% filing rate means different things in 
+  different states
+- Median imputation applied after target variable creation so imputed values don't 
+  influence the threshold calculation
+- Defensive column aliasing handles dot vs underscore naming across all five sources
+- Rows with null eviction.filing.rate dropped entirely since they cannot be labeled
+
+**Real-World Discoveries:**  
+- Master dataset has 72,595 null eviction filing rates — only 12,694 tracts have 
+  validated Eviction Lab data and can be used for model training
+- Class balance landed at exactly 67/33 (8,454 low risk / 4,240 high risk) as designed
+- Zero nulls after median imputation across all 10 feature columns
+- Output: 12,694 rows saved to data/processed/modeling_dataset.csv
+
+**Next:** Prompt 010 — Model Training (Logistic Regression + XGBoost)
