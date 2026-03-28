@@ -7,3 +7,4 @@ data/processed/
 *.pkl
 __pycache__/
 .env
+node_modules/node_modules/
