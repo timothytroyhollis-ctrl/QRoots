@@ -77,6 +77,10 @@ documented. Required a manual fix to KEEP_COLUMNS after running and catching the
 Most recent validated year in the dataset is 2016 — a known Eviction Lab coverage limitation, 
 not a script error. Output: 15,217 tract rows saved to data/processed/evictionlab_tract_data.csv.
 
+**Next:** Prompt 004 — HUD Fair Market Rent Ingestion Script
+
+---
+
 ## Prompt 004 — HUD Fair Market Rent Ingestion Script
 **Date:** 2026-03-26  
 **Purpose:** Generate a HUD Fair Market Rent API ingestion script at the metro area level.
@@ -106,6 +110,10 @@ state by state. Script compiled successfully but required two fixes before runni
 - HUD FMR data is at metro area level not tract level. Merge strategy: join on first 5 
   digits of tract GEOID to county FIPS during the merge script.
 - Output: 4,765 metro area rows saved to data/processed/hud_fmr_data.csv.
+
+**Next:** Prompt 005 — CDC PLACES Ingestion Script
+
+---
 
 ## Prompt 005 — CDC PLACES Ingestion Script
 **Date:** 2026-03-26  
@@ -140,6 +148,10 @@ and automatic output directory creation. Script compiled cleanly on first pass.
 - Output: 78,815 tract rows saved to data/processed/cdc_places_data.csv with three 
   health indicator columns.
 
+**Next:** Prompt 006 — BLS/FRED Economic Indicators Ingestion Script
+
+  ---
+
 ## Prompt 006 — BLS/FRED Economic Indicators Ingestion Script
 **Date:** 2026-03-26  
 **Purpose:** Generate a FRED API ingestion script for county-level unemployment rates.
@@ -169,6 +181,10 @@ API, and implemented defensive error handling for missing series. Script compile
 - series_id variable was dropped during type hint fix and had to be restored manually.
 - fredapi already installed in DSC630 environment from prior coursework.
 - Script runs one API call per county — estimated 30-60 minutes for full national pull.
+
+**Next:** Prompt 007 — Master Merge Script
+
+---
 
 ## Prompt 007 — Master Merge Script
 **Date:** 2026-03-27  
@@ -205,6 +221,10 @@ left joins for all five sources against the ACS base.
   of 85,407 rows returned null for all HUD columns. Join strategy fundamentally broken.
 - Row count of 85,407 instead of expected 85,396 indicates 11 duplicate tracts.
 
+**Next:** Prompt 008 — Clean Master Merge Script
+
+---
+
 ## Prompt 008 — Clean Master Merge Script
 **Date:** 2026-03-27  
 **Purpose:** Remove broken HUD and FRED sources, deduplicate master dataset.
@@ -231,6 +251,10 @@ and added drop_duplicates on GEOID. Script recompiled cleanly on first pass.
 - After removing HUD and FRED, row count corrected to exactly 85,396 — 
   confirming the 11 duplicates came from the HUD fan-out join
 - Three source merge runs cleanly with no duplicate GEOIDs 
+
+**Next:** Prompt 009 — Feature Engineering and Target Variable Creation
+
+---
 
 ## Prompt 009 — Feature Engineering and Target Variable Creation
 **Date:** 2026-03-27  
@@ -271,6 +295,10 @@ median imputation applied after labeling, and clean deduplication on GEOID.
 - Zero nulls after median imputation across all 10 feature columns
 - Output: 12,694 rows saved to data/processed/modeling_dataset.csv
 
+**Next:** Prompt 010 — Model Training (Logistic Regression + XGBoost)
+
+---
+
 ## Prompt 010 — Model Training (Logistic Regression + XGBoost)
 **Date:** 2026-03-27  
 **Purpose:** Train and evaluate binary classification models to predict high eviction risk.
@@ -300,6 +328,10 @@ side-by-side evaluation of both models, and conditional save of whichever model 
 - XGBoost: F1 0.6587, AUC-ROC 0.8103
 - XGBoost won and saved to models/xgboost_model.pkl
 - AUC-ROC of 0.81 is considered strong for social science prediction problems
+
+**Next:** Prompt 011 — SHAP Explainability Layer
+
+---
 
 ## Prompt 011 — SHAP Explainability Layer
 **Date:** 2026-03-27  
@@ -332,6 +364,10 @@ for every tract. Output saved as a flat CSV with one row per tract.
 - Example: tract 01001020100 risk score 14.6%, driven down by high median gross rent, 
   low renter occupied units, and low depression rates
 - Output saved to data/processed/shap_explanations.csv
+
+**Next:** Prompt 012 — FastAPI Back End
+
+---
 
 ## Prompt 012 — FastAPI Back End
 **Date:** 2026-03-27  
@@ -367,4 +403,119 @@ with proper HTTP status codes throughout.
 - Interactive docs available at http://localhost:8000/docs
 - Full production-quality JSON response on first run
 
-**Next:** Prompt 013 — React Front End with Choropleth Map
+**Next:** Prompt 013 — React Front End
+
+---
+
+## Prompt 013 — React Front End
+**Date:** 2026-03-27  
+**Purpose:** Build a professional React single-page application for RootScore.
+
+**Prompt:**  
+Write a React single-page application in app/src/App.jsx that serves as the RootScore 
+front end. The app should have a search bar where users can type a census tract GEOID 
+or a city name plus state abbreviation. On search it calls the RootScore FastAPI back 
+end at http://localhost:8000. Display results as a clean card showing: GEOID, risk score 
+as a percentage, risk tier as a colored badge (green=low, yellow=medium, orange=high, 
+red=critical), and top 3 driving factors with plain language labels and direction arrows. 
+Use Tailwind CSS for styling. Include a header with RootScore name and tagline: Know 
+before displacement happens.
+
+**Codex Output Summary:**  
+Codex generated App.jsx with branded header, single search bar handling both GEOID and 
+city/state formats, color-coded risk tier badges, SHAP direction arrows, and clean result 
+cards. Unicode arrow fix applied automatically by Codex after spotting encoding issue.
+
+**Key Design Decisions:**  
+- Single search bar parses input automatically as GEOID or City, ST format
+- Color coded badges: green=low, amber=medium, orange=high, red=critical
+- SHAP direction shown as up/down arrows with red/green coloring
+- Plain language factor descriptions replace technical feature names
+- Tailwind CSS v3 required over v4 due to create-react-app compatibility
+
+**Real-World Discoveries:**  
+- Tailwind v4 installed by default but incompatible with create-react-app. 
+  Fixed by explicitly installing tailwindcss@3 postcss autoprefixer.
+- App.js and App.jsx conflict — deleted default App.js to load our component.
+- City search returns error since modeling dataset lacks city name column. 
+  To be fixed in next session.
+- Output: RootScore UI live at localhost:3000 with working tract search.
+
+**Next:** Prompt 014 — ZIP Code Search
+
+---
+
+## Prompt 014 — ZIP Code Search (Replacing City Search)
+**Date:** 2026-03-28  
+**Purpose:** Replace broken city search with ZIP code search using a tract crosswalk.
+
+**Prompt:**  
+Update api/main.py to add ZIP code search. On startup also load 
+data/processed/zip_tract_crosswalk.csv into memory as a DataFrame with columns zip and 
+tract_geoid. Remove the /city/{city_name} endpoint entirely. Add a new endpoint GET 
+/zip/{zipcode} that accepts a 5-digit zip code, looks up all matching tract_geoid values 
+from the crosswalk, fetches risk scores for each tract from the shap DataFrame, and returns 
+them ranked by predicted_risk_score descending. Return the zip code, tract count, and list 
+of tracts each with GEOID, predicted_risk_score, risk_tier, and top_driving_factors. 
+Return 404 if zip code not found in crosswalk.
+
+**Codex Output Summary:**  
+Codex updated api/main.py removing the city endpoint entirely, added ZIP crosswalk loading 
+on startup, and implemented GET /zip/{zipcode} with ranked tract results and full driving 
+factors per tract. Also cleaned up unused Query import from city endpoint removal.
+
+**Key Design Decisions:**  
+- ZIP crosswalk loaded into memory on startup for fast lookups
+- City search removed entirely — ZIP is more intuitive for end users and judges
+- Crosswalk sourced from Census Bureau ZCTA to tract relationship file (148,897 rows)
+- HUD USPS crosswalk API returned 403 Forbidden — Census Bureau file used instead
+
+**Real-World Discoveries:**  
+- HUD USPS crosswalk endpoint requires separate API access not included with FMR token
+- ZIP search returned 0 results for San Antonio 78201 — root cause: only 12,694 of 
+  85,396 tracts have predictions (Eviction Lab coverage limitation)
+- Fix: score all 85,396 tracts using the trained model regardless of Eviction Lab 
+  coverage — model can predict on any tract using ACS and CDC features alone
+
+**Next:** Prompt 015 — Score All 85,396 Tracts
+
+---
+
+## Prompt 015 — Score All 85,396 Tracts
+**Date:** 2026-03-28  
+**Purpose:** Generate predictions for all US census tracts so any ZIP code returns results.
+
+**Prompt:**  
+Write a Python script called score_all_tracts.py that loads the trained model from 
+models/xgboost_model.pkl and feature columns from models/feature_columns.pkl using joblib. 
+Load data/processed/master_dataset.csv which has 85,396 tracts. Impute missing values 
+using median imputation for all feature columns. Generate predicted_risk_score for all 
+85,396 tracts using predict_proba. Then run SHAP explanations for all tracts and extract 
+top 3 driving factors per tract. Save the full output to 
+data/processed/shap_explanations_all.csv with columns: GEOID, predicted_risk_score, 
+top_feature_1, top_feature_1_value, top_feature_2, top_feature_2_value, top_feature_3, 
+top_feature_3_value. Print row count when done.
+
+**Codex Output Summary:**  
+Codex generated score_all_tracts.py loading the trained XGBoost model and feature columns, 
+reading all 85,396 tracts from master_dataset.csv, applying median imputation, scoring with 
+predict_proba, computing SHAP values for all rows, and extracting top 3 drivers per tract. 
+Script includes defensive column aliasing to handle naming differences across sources.
+
+## Manual Fix — Update API to Use Full Tract Dataset
+**Date:** 2026-03-28  
+**Purpose:** Point API to shap_explanations_all.csv for full national coverage.
+
+**Change Made:**  
+In api/main.py changed SHAP_PATH from:
+data/processed/shap_explanations.csv  
+to:  
+data/processed/shap_explanations_all.csv
+
+**Reason:**  
+Single line path change did not warrant a full Codex prompt. score_all_tracts.py 
+generated predictions for all 85,396 tracts enabling any US ZIP code to return results.
+
+**Next:** Prompt 016 — Update API to Use Full 85,396 Tract Dataset
+
+---
