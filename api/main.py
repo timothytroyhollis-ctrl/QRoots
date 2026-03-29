@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import httpx
 import pandas as pd
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -52,7 +53,7 @@ def risk_tier(score: float) -> str:
     return "low"
 
 
-def build_driving_factors(row: pd.Series) -> list[dict]:
+def build_driving_factors(row: pd.Series) -> list:
     drivers = []
     for rank in range(1, 4):
         feature_key = row.get(f"top_feature_{rank}")
@@ -98,7 +99,7 @@ def load_data() -> None:
 
 
 @app.get("/health")
-def health() -> dict[str, str]:
+def health() -> dict:
     return {"status": "ok"}
 
 
@@ -155,3 +156,26 @@ def get_zip(zipcode: str) -> dict:
         "tract_count": len(tracts),
         "tracts": tracts,
     }
+
+
+@app.get("/tracts/geojson/{state_fips}")
+async def get_tract_geojson(state_fips: str, geoids: str = "") -> dict:
+    tiger_url = "https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/Tracts_Blocks/MapServer/0/query"
+
+    geoid_list = [g.strip() for g in geoids.split(",") if g.strip()]
+    if geoid_list:
+        where_clause = "GEOID IN ('" + "','".join(geoid_list) + "')"
+    else:
+        where_clause = f"STATE='{state_fips}'"
+
+    params = {
+        "where": where_clause,
+        "outFields": "GEOID,STATE,COUNTY,TRACT,NAME",
+        "outSR": "4326",
+        "f": "geojson",
+    }
+
+    async with httpx.AsyncClient(timeout=30) as client:
+        response = await client.get(tiger_url, params=params)
+        response.raise_for_status()
+        return response.json()

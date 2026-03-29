@@ -1,13 +1,23 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { GeoJSON, MapContainer, TileLayer, useMap } from "react-leaflet";
+import "leaflet/dist/leaflet.css";
 
 
 const API_BASE_URL = "http://localhost:8000";
+const TIGER_TRACTS_URL = "http://localhost:8000/tracts/geojson";
 
 const badgeClasses = {
   low: "bg-emerald-100 text-emerald-800 ring-emerald-200",
   medium: "bg-amber-100 text-amber-800 ring-amber-200",
   high: "bg-orange-100 text-orange-800 ring-orange-200",
   critical: "bg-red-100 text-red-800 ring-red-200",
+};
+
+const mapFillColors = {
+  low: "#22c55e",
+  medium: "#facc15",
+  high: "#f97316",
+  critical: "#ef4444",
 };
 
 function parseSearchInput(value) {
@@ -38,6 +48,129 @@ function formatShapValue(value) {
     tone,
     text: `${arrow} ${Math.abs(numericValue).toFixed(3)}`,
   };
+}
+
+async function fetchStateTractsGeoJson(stateFips, geoids) {
+  const params = new URLSearchParams({ geoids: geoids.join(",") });
+  const response = await fetch(`${TIGER_TRACTS_URL}/${stateFips}?${params.toString()}`);
+  if (!response.ok) throw new Error(`Failed to load tract boundaries.`);
+  return response.json();
+}
+
+function MapBounds({ geoJson }) {
+  const map = useMap();
+
+  useEffect(() => {
+    const features = geoJson?.features ?? [];
+    if (!features.length) {
+      return;
+    }
+
+    const bounds = [];
+    features.forEach((feature) => {
+      const coordinates = feature?.geometry?.coordinates ?? [];
+      const geometryType = feature?.geometry?.type;
+
+      const walkCoordinates = (nodes) => {
+        if (!Array.isArray(nodes)) {
+          return;
+        }
+
+        if (typeof nodes[0] === "number" && typeof nodes[1] === "number") {
+          bounds.push([nodes[1], nodes[0]]);
+          return;
+        }
+
+        nodes.forEach(walkCoordinates);
+      };
+
+      if (geometryType === "Polygon" || geometryType === "MultiPolygon") {
+        walkCoordinates(coordinates);
+      }
+    });
+
+    if (bounds.length) {
+      map.fitBounds(bounds, { padding: [24, 24] });
+    }
+  }, [geoJson, map]);
+
+  return null;
+}
+
+function ZipResultsMap({ tracts, tractGeoJson, mapError, mapLoading }) {
+  if (mapLoading) {
+    return (
+      <section className="mt-6 rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm shadow-slate-200/50">
+        <p className="text-sm text-slate-600">Loading tract boundaries for this ZIP code...</p>
+      </section>
+    );
+  }
+
+  if (mapError) {
+    return (
+      <section className="mt-6 rounded-[2rem] border border-amber-200 bg-amber-50 p-6 text-sm text-amber-800">
+        {mapError}
+      </section>
+    );
+  }
+
+  if (!tractGeoJson?.features?.length) {
+    return null;
+  }
+
+  const tractByGeoid = new Map(tracts.map((tract) => [tract.GEOID, tract]));
+
+  const geoJsonStyle = (feature) => {
+    const geoid = feature?.properties?.GEOID;
+    const tract = tractByGeoid.get(geoid);
+    const tier = tract?.risk_tier ?? "low";
+
+    return {
+      color: "#0f172a",
+      weight: 1,
+      fillColor: mapFillColors[tier] ?? mapFillColors.low,
+      fillOpacity: 0.58,
+    };
+  };
+
+  const onEachFeature = (feature, layer) => {
+    const geoid = feature?.properties?.GEOID;
+    const tract = tractByGeoid.get(geoid);
+    if (!tract) {
+      return;
+    }
+
+    const topFactor = tract.top_driving_factors?.[0];
+    layer.bindPopup(`
+      <div style="min-width: 220px;">
+        <div style="font-weight: 700; margin-bottom: 4px;">${tract.GEOID}</div>
+        <div>Risk score: ${formatPercent(tract.predicted_risk_score)}</div>
+        <div>Risk tier: ${tract.risk_tier}</div>
+        <div style="margin-top: 8px;">Top driver: ${topFactor?.label ?? "N/A"}</div>
+      </div>
+    `);
+  };
+
+  return (
+    <section className="mt-6 rounded-[2rem] border border-slate-200 bg-white p-4 shadow-sm shadow-slate-200/50">
+      <div className="mb-4 px-2 pt-2">
+        <h2 className="text-lg font-semibold text-slate-900">ZIP-level tract map</h2>
+        <p className="mt-1 text-sm text-slate-600">
+          Census tract boundaries are shaded by RootScore risk tier. Click a tract to see details.
+        </p>
+      </div>
+      <div className="h-[34rem] overflow-hidden rounded-3xl">
+        <MapContainer center={[37.8, -96]} zoom={4} scrollWheelZoom className="h-full w-full">
+          <TileLayer
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          />
+          <GeoJSON data={tractGeoJson} style={geoJsonStyle} onEachFeature={onEachFeature} />
+          <MapBounds geoJson={tractGeoJson} />
+        </MapContainer>
+      </div>
+    </section>
+  );
 }
 
 function ResultCard({ tract }) {
@@ -102,11 +235,65 @@ export default function App() {
   const [searchContext, setSearchContext] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [searchMode, setSearchMode] = useState("");
+  const [tractGeoJson, setTractGeoJson] = useState(null);
+  const [mapLoading, setMapLoading] = useState(false);
+  const [mapError, setMapError] = useState("");
+
+  const zipResultStateFips = useMemo(() => {
+    if (searchMode !== "zip" || results.length === 0) {
+      return [];
+    }
+    return [...new Set(results.map((tract) => String(tract.GEOID).slice(0, 2)))];
+  }, [results, searchMode]);
+
+  useEffect(() => {
+    async function loadMapData() {
+      if (searchMode !== "zip" || results.length === 0 || zipResultStateFips.length === 0) {
+        setTractGeoJson(null);
+        setMapError("");
+        return;
+      }
+
+      setMapLoading(true);
+      setMapError("");
+
+      try {
+        const geoJsonResponses = await Promise.all(
+          zipResultStateFips.map((stateFips) => {
+            const stateGeoids = results
+              .filter((t) => t.GEOID.startsWith(stateFips))
+              .map((t) => t.GEOID);
+            return fetchStateTractsGeoJson(stateFips, stateGeoids);
+          })
+        );
+
+        const tractGeoids = new Set(results.map((tract) => tract.GEOID));
+        const mergedFeatures = geoJsonResponses
+          .flatMap((geoJson) => geoJson.features ?? [])
+          .filter((feature) => tractGeoids.has(feature?.properties?.GEOID));
+
+        setTractGeoJson({
+          type: "FeatureCollection",
+          features: mergedFeatures,
+        });
+      } catch (mapLoadError) {
+        setTractGeoJson(null);
+        setMapError(mapLoadError.message || "Unable to load map boundaries.");
+      } finally {
+        setMapLoading(false);
+      }
+    }
+
+    loadMapData();
+  }, [results, searchMode, zipResultStateFips]);
 
   async function handleSearch(event) {
     event.preventDefault();
     setError("");
     setResults([]);
+    setTractGeoJson(null);
+    setMapError("");
 
     const parsed = parseSearchInput(query);
     if (!parsed) {
@@ -127,6 +314,7 @@ export default function App() {
 
         setResults([payload]);
         setSearchContext(`Showing RootScore for tract ${payload.GEOID}`);
+        setSearchMode("tract");
       } else {
         const response = await fetch(`${API_BASE_URL}/zip/${parsed.zipcode}`);
         const payload = await response.json();
@@ -137,9 +325,11 @@ export default function App() {
 
         setResults(payload.tracts || []);
         setSearchContext(`Showing ${payload.tract_count} tracts for ZIP ${payload.zip}`);
+        setSearchMode("zip");
       }
     } catch (searchError) {
       setError(searchError.message || "Something went wrong while searching.");
+      setSearchMode("");
     } finally {
       setLoading(false);
     }
@@ -179,7 +369,7 @@ export default function App() {
 
           <p className="mt-3 text-sm text-slate-500">
             Examples: <span className="font-medium text-slate-700">17031010100</span> or{" "}
-            <span className="font-medium text-slate-700">78201</span>
+            <span className="font-medium text-slate-700">78229</span>
           </p>
         </header>
 
@@ -199,8 +389,17 @@ export default function App() {
             </div>
           ) : null}
 
+          {searchMode === "zip" && results.length > 0 ? (
+            <ZipResultsMap
+              tracts={results}
+              tractGeoJson={tractGeoJson}
+              mapError={mapError}
+              mapLoading={mapLoading}
+            />
+          ) : null}
+
           {results.length > 0 ? (
-            <div className="grid gap-5 lg:grid-cols-2">
+            <div className="mt-6 grid gap-5 lg:grid-cols-2">
               {results.map((tract) => (
                 <ResultCard key={tract.GEOID} tract={tract} />
               ))}
