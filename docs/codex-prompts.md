@@ -502,7 +502,11 @@ reading all 85,396 tracts from master_dataset.csv, applying median imputation, s
 predict_proba, computing SHAP values for all rows, and extracting top 3 drivers per tract. 
 Script includes defensive column aliasing to handle naming differences across sources.
 
-## Manual Fix — Update API to Use Full Tract Dataset
+**Next:** Manual Fix 016 — Update API to Use Full Tract Dataset
+
+---
+
+## Manual Fix 016 — Update API to Use Full Tract Dataset
 **Date:** 2026-03-28  
 **Purpose:** Point API to shap_explanations_all.csv for full national coverage.
 
@@ -516,6 +520,83 @@ data/processed/shap_explanations_all.csv
 Single line path change did not warrant a full Codex prompt. score_all_tracts.py 
 generated predictions for all 85,396 tracts enabling any US ZIP code to return results.
 
-**Next:** Prompt 016 — Update API to Use Full 85,396 Tract Dataset
+**Key Design Decisions:**  
+- Model scored on all 85,396 tracts not just the 12,694 training tracts
+- Median imputation applied at scoring time using same feature set as training
+- shap_explanations_all.csv replaces shap_explanations.csv as the API data source
+- Full national coverage enables any US ZIP code to return results
+
+**Next:** Prompt 017 — Interactive Choropleth Map
 
 ---
+
+## Prompt 017 — Interactive Choropleth Map
+**Date:** 2026-03-28  
+**Purpose:** Add a visual choropleth map showing census tract risk tiers for ZIP searches.
+
+**Prompt:**  
+Add an interactive choropleth map to app/src/App.jsx using React Leaflet. When a user 
+searches a ZIP code and results are returned, display a Leaflet map below the search bar 
+showing the census tract boundaries for that ZIP code colored by risk tier: green for low, 
+yellow for medium, orange for high, red for critical. Use the Census Bureau TIGERweb API 
+to fetch tract GeoJSON boundaries dynamically based on the state FIPS code derived from 
+the tract GEOIDs. Each tract polygon should be clickable and show a popup with the GEOID, 
+risk score percentage, risk tier, and top driving factor. Install react-leaflet and leaflet 
+as dependencies.
+
+**Codex Output Summary:**  
+Codex generated a full choropleth map implementation using React Leaflet with MapContainer, 
+TileLayer, GeoJSON, and a custom MapBounds component that auto-fits the map to the returned 
+tract boundaries. Added color mapping for all four risk tiers and clickable popups per tract.
+
+**Key Design Decisions:**  
+- React Leaflet chosen over Mapbox for zero API key requirement
+- OpenStreetMap tiles used as base layer — free and no key needed
+- MapBounds component auto-fits map viewport to returned tract boundaries
+- Clickable popups show GEOID, risk score, risk tier, and top driving factor
+- Map only renders for ZIP searches not GEOID searches
+
+**Real-World Discoveries:**  
+- Census TIGERweb API blocked by CORS when called directly from browser. Fixed by 
+  proxying through FastAPI back end at GET /tracts/geojson/{state_fips}
+- Fetching entire state of Texas (5,000+ tracts) caused timeout. Fixed by passing 
+  specific GEOIDs as query parameter so only 10-20 tracts are fetched per search
+- Tailwind CSS v3 required over v4 due to create-react-app compatibility
+- Map renders correctly after both CORS fix and GEOID-specific fetch optimization
+- Output: Interactive choropleth map live at localhost showing ZIP 78229 in red/yellow
+
+**Next:** Prompt 018 — Ethics Footer
+
+---
+
+## Prompt 018 — Ethics Footer
+**Date:** 2026-03-29  
+**Purpose:** Add an ethics statement and data transparency footer to the RootScore UI.
+
+**Prompt:**  
+Add a footer to app/src/App.jsx below the main results section. The footer should include: 
+a brief ethics statement that reads 'RootScore is designed for intervention, not 
+surveillance. Scores are advisory and reflect neighborhood-level patterns, not individual 
+circumstances. Data sources: Census ACS, Eviction Lab, CDC PLACES.', a data vintage note 
+that reads 'Eviction data reflects 2016 validated records. Model trained on XGBoost with 
+AUC-ROC 0.81.', and a link to the GitHub repo. Style it cleanly in muted text matching 
+the existing Tailwind design.
+
+**Codex Output Summary:**  
+Codex added a styled footer below the results section with ethics statement, data vintage 
+note, and GitHub repository link using muted slate text matching the existing Tailwind 
+design language.
+
+**Key Design Decisions:**  
+- Ethics statement explicitly frames RootScore as intervention not surveillance
+- Data vintage note is transparent about Eviction Lab 2016 coverage limitation
+- AUC-ROC metric included so judges can see model quality at a glance
+- GitHub link connects judges directly to the full codebase and Codex prompt log
+
+**Results:**  
+- Footer visible on all searches below result cards
+- Ethics statement and data vintage note render in muted slate-500 text
+- GitHub link styled in teal matching the RootScore brand color
+- ZIP label added to each result card so users know which ZIP they searched
+
+**Next:** Deployment to Public URL

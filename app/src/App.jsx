@@ -173,7 +173,7 @@ function ZipResultsMap({ tracts, tractGeoJson, mapError, mapLoading }) {
   );
 }
 
-function ResultCard({ tract }) {
+function ResultCard({ tract, zip }) {
   return (
     <article className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm shadow-slate-200/60">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -181,6 +181,9 @@ function ResultCard({ tract }) {
           <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
             Census Tract
           </p>
+          {zip ? (
+            <p className="mt-1 text-xs text-slate-400">ZIP {zip}</p>
+          ) : null}
           <h2 className="mt-2 text-2xl font-semibold text-slate-900">{tract.GEOID}</h2>
         </div>
 
@@ -236,6 +239,7 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [searchMode, setSearchMode] = useState("");
+  const [searchedZip, setSearchedZip] = useState("");
   const [tractGeoJson, setTractGeoJson] = useState(null);
   const [mapLoading, setMapLoading] = useState(false);
   const [mapError, setMapError] = useState("");
@@ -294,6 +298,7 @@ export default function App() {
     setResults([]);
     setTractGeoJson(null);
     setMapError("");
+    setSearchedZip("");
 
     const parsed = parseSearchInput(query);
     if (!parsed) {
@@ -315,6 +320,7 @@ export default function App() {
         setResults([payload]);
         setSearchContext(`Showing RootScore for tract ${payload.GEOID}`);
         setSearchMode("tract");
+        setSearchedZip("");
       } else {
         const response = await fetch(`${API_BASE_URL}/zip/${parsed.zipcode}`);
         const payload = await response.json();
@@ -326,6 +332,7 @@ export default function App() {
         setResults(payload.tracts || []);
         setSearchContext(`Showing ${payload.tract_count} tracts for ZIP ${payload.zip}`);
         setSearchMode("zip");
+        setSearchedZip(parsed.zipcode);
       }
     } catch (searchError) {
       setError(searchError.message || "Something went wrong while searching.");
@@ -401,7 +408,7 @@ export default function App() {
           {results.length > 0 ? (
             <div className="mt-6 grid gap-5 lg:grid-cols-2">
               {results.map((tract) => (
-                <ResultCard key={tract.GEOID} tract={tract} />
+                <ResultCard key={tract.GEOID} tract={tract} zip={searchedZip} />
               ))}
             </div>
           ) : !loading ? (
@@ -414,6 +421,26 @@ export default function App() {
             </section>
           ) : null}
         </main>
+
+        <footer className="mt-10 rounded-[2rem] border border-white/70 bg-white/70 px-8 py-6 shadow-sm shadow-slate-200/40">
+          <p className="text-sm leading-7 text-slate-500">
+            RootScore is designed for intervention, not surveillance. Scores are advisory and
+            reflect neighborhood-level patterns, not individual circumstances. Data sources:
+            Census ACS, Eviction Lab, CDC PLACES.
+          </p>
+          <p className="mt-3 text-sm leading-7 text-slate-500">
+            Eviction data reflects 2016 validated records. Model trained on XGBoost with AUC-ROC 0.81.
+          </p>
+          <a
+            href="https://github.com/timothytroyhollis-ctrl/RootScore"
+            target="_blank"
+            rel="noreferrer"
+            className="mt-4 inline-flex text-sm font-medium text-teal-700 transition hover:text-teal-800"
+          >
+            View the GitHub repository →
+          </a>
+        </footer>
+
       </div>
     </div>
   );
