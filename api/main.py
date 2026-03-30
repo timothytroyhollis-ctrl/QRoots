@@ -179,3 +179,12 @@ async def get_tract_geojson(state_fips: str, geoids: str = "") -> dict:
         response = await client.get(tiger_url, params=params)
         response.raise_for_status()
         return response.json()
+
+@app.get("/")
+def root():
+    return {
+        "api": "RootScore API",
+        "version": "0.1.0",
+        "docs": "/docs",
+        "endpoints": ["/health", "/tract/{geoid}", "/zip/{zipcode}", "/tracts/geojson/{state_fips}"]
+    }
