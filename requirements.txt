@@ -1,5 +1,4 @@
 fastapi==0.135.2
-fredapi==0.5.2
 httpx==0.28.1
 joblib==1.5.3
 pandas==3.0.0
@@ -7,7 +6,7 @@ requests==2.33.0
 scikit-learn==1.8.0
 shap==0.51.0
 xgboost==3.2.0
-numpy
-scipy
-numba
-uvicorn[standard]
+numpy==2.4.4
+scipy==1.17.1
+uvicorn[standard]==0.42.0
+python-multipart==0.0.20
