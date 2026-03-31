@@ -3,8 +3,8 @@ import { GeoJSON, MapContainer, TileLayer, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 
 
-const API_BASE_URL = "http://localhost:8000";
-const TIGER_TRACTS_URL = "http://localhost:8000/tracts/geojson";
+const API_BASE_URL = "https://rootscore-api.onrender.com";
+const TIGER_TRACTS_URL = "https://rootscore-api.onrender.com/tracts/geojson";
 
 const badgeClasses = {
   low: "bg-emerald-100 text-emerald-800 ring-emerald-200",
