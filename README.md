@@ -1,2 +1,2 @@
-# RootScore
-A Codex-powered neighborhood eviction risk tool for housing counselors and city planners.
+# QRoots
+A Codex‑powered relocation guide that evaluates crime, education, income, housing, and quality‑of‑life metrics to help users find the right place to grow.
