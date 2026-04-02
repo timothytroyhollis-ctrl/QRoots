@@ -3,8 +3,9 @@ import { GeoJSON, MapContainer, TileLayer, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 
 
-const API_BASE_URL = "https://rootscore-api.onrender.com";
-const TIGER_TRACTS_URL = "https://rootscore-api.onrender.com/tracts/geojson";
+const API_BASE_URL = "http://localhost:8000";
+const TIGER_TRACTS_URL =
+  "https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/Tracts_Blocks/MapServer/0/query";
 
 const badgeClasses = {
   low: "bg-emerald-100 text-emerald-800 ring-emerald-200",
@@ -18,6 +19,14 @@ const mapFillColors = {
   medium: "#facc15",
   high: "#f97316",
   critical: "#ef4444",
+};
+
+const dimensionLabels = {
+  housing_stability_score: "Housing Stability",
+  walk_score: "Walkability",
+  transit_score: "Transit",
+  education_score: "Education",
+  affordability_score: "Affordability",
 };
 
 function parseSearchInput(value) {
@@ -39,6 +48,38 @@ function formatPercent(value) {
   return `${(Number(value) * 100).toFixed(1)}%`;
 }
 
+function formatScore(value) {
+  return Math.round(Number(value) || 0);
+}
+
+function scoreTone(value) {
+  const numericValue = Number(value) || 0;
+  if (numericValue < 40) {
+    return {
+      text: "text-red-700",
+      fill: "bg-red-500",
+      panel: "from-red-50 to-white",
+      ring: "ring-red-200",
+    };
+  }
+
+  if (numericValue <= 60) {
+    return {
+      text: "text-amber-700",
+      fill: "bg-amber-400",
+      panel: "from-amber-50 to-white",
+      ring: "ring-amber-200",
+    };
+  }
+
+  return {
+    text: "text-emerald-700",
+    fill: "bg-emerald-500",
+    panel: "from-emerald-50 to-white",
+    ring: "ring-emerald-200",
+  };
+}
+
 function formatShapValue(value) {
   const numericValue = Number(value);
   const arrow = numericValue >= 0 ? "\u2191" : "\u2193";
@@ -50,10 +91,19 @@ function formatShapValue(value) {
   };
 }
 
-async function fetchStateTractsGeoJson(stateFips, geoids) {
-  const params = new URLSearchParams({ geoids: geoids.join(",") });
-  const response = await fetch(`${TIGER_TRACTS_URL}/${stateFips}?${params.toString()}`);
-  if (!response.ok) throw new Error(`Failed to load tract boundaries.`);
+async function fetchStateTractsGeoJson(stateFips) {
+  const params = new URLSearchParams({
+    where: `STATE='${stateFips}'`,
+    outFields: "GEOID,STATE,COUNTY,TRACT,NAME",
+    outSR: "4326",
+    f: "geojson",
+  });
+
+  const response = await fetch(`${TIGER_TRACTS_URL}?${params.toString()}`);
+  if (!response.ok) {
+    throw new Error(`Failed to load tract boundaries for state ${stateFips}.`);
+  }
+
   return response.json();
 }
 
@@ -156,7 +206,7 @@ function ZipResultsMap({ tracts, tractGeoJson, mapError, mapLoading }) {
       <div className="mb-4 px-2 pt-2">
         <h2 className="text-lg font-semibold text-slate-900">ZIP-level tract map</h2>
         <p className="mt-1 text-sm text-slate-600">
-          Census tract boundaries are shaded by QRoots housing stability tier. Click a tract to see details.
+          Census tract boundaries are shaded by QRoots risk tier.
         </p>
       </div>
       <div className="h-[34rem] overflow-hidden rounded-3xl">
@@ -173,7 +223,72 @@ function ZipResultsMap({ tracts, tractGeoJson, mapError, mapLoading }) {
   );
 }
 
-function ResultCard({ tract, zip }) {
+function DimensionBar({ label, value }) {
+  const safeValue = Math.max(0, Math.min(100, Number(value) || 0));
+  const tone = scoreTone(safeValue);
+
+  return (
+    <div>
+      <div className="mb-2 flex items-center justify-between">
+        <p className="text-sm font-medium text-slate-700">{label}</p>
+        <p className={`text-sm font-semibold ${tone.text}`}>{formatScore(safeValue)}/100</p>
+      </div>
+      <div className="h-3 w-full overflow-hidden rounded-full bg-slate-100">
+        <div
+          className={`h-full rounded-full ${tone.fill}`}
+          style={{ width: `${safeValue}%` }}
+        />
+      </div>
+    </div>
+  );
+}
+
+function QRootsSummaryCard({ overallScore, tract }) {
+  const tone = scoreTone(overallScore);
+  const dimensionKeys = [
+    "housing_stability_score",
+    "walk_score",
+    "transit_score",
+    "education_score",
+    "affordability_score",
+  ];
+
+  return (
+    <section
+      className={`mb-6 rounded-[2rem] border bg-gradient-to-br ${tone.panel} p-6 shadow-sm shadow-slate-200/50 ring-1 ${tone.ring}`}
+    >
+      <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+        <div>
+          <p className="text-sm font-semibold uppercase tracking-[0.28em] text-slate-500">
+            QRoots Score
+          </p>
+          <div className="mt-3 flex items-end gap-3">
+            <span className={`text-5xl font-bold tracking-tight ${tone.text}`}>
+              {formatScore(overallScore)}
+            </span>
+            <span className="pb-1 text-base font-medium text-slate-500">/ 100</span>
+          </div>
+          <p className="mt-3 text-sm leading-6 text-slate-600">
+            A composite neighborhood score balancing housing stability, walkability,
+            transit access, educational attainment, and affordability.
+          </p>
+        </div>
+
+        <div className="grid flex-1 gap-4">
+          {dimensionKeys.map((key) => (
+            <DimensionBar
+              key={key}
+              label={dimensionLabels[key]}
+              value={tract?.[key]}
+            />
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function ResultCard({ tract }) {
   return (
     <article className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm shadow-slate-200/60">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -181,9 +296,6 @@ function ResultCard({ tract, zip }) {
           <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
             Census Tract
           </p>
-          {zip ? (
-            <p className="mt-1 text-xs text-slate-400">ZIP {zip}</p>
-          ) : null}
           <h2 className="mt-2 text-2xl font-semibold text-slate-900">{tract.GEOID}</h2>
         </div>
 
@@ -195,7 +307,7 @@ function ResultCard({ tract, zip }) {
           </span>
           <div className="text-left sm:text-right">
             <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
-              Housing Stability Risk
+              Risk Score
             </p>
             <p className="mt-1 text-3xl font-bold text-slate-900">
               {formatPercent(tract.predicted_risk_score)}
@@ -239,15 +351,16 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [searchMode, setSearchMode] = useState("");
-  const [searchedZip, setSearchedZip] = useState("");
   const [tractGeoJson, setTractGeoJson] = useState(null);
   const [mapLoading, setMapLoading] = useState(false);
   const [mapError, setMapError] = useState("");
+  const [zipQRootsScore, setZipQRootsScore] = useState(null);
 
   const zipResultStateFips = useMemo(() => {
     if (searchMode !== "zip" || results.length === 0) {
       return [];
     }
+
     return [...new Set(results.map((tract) => String(tract.GEOID).slice(0, 2)))];
   }, [results, searchMode]);
 
@@ -264,12 +377,7 @@ export default function App() {
 
       try {
         const geoJsonResponses = await Promise.all(
-          zipResultStateFips.map((stateFips) => {
-            const stateGeoids = results
-              .filter((t) => t.GEOID.startsWith(stateFips))
-              .map((t) => t.GEOID);
-            return fetchStateTractsGeoJson(stateFips, stateGeoids);
-          })
+          zipResultStateFips.map((stateFips) => fetchStateTractsGeoJson(stateFips))
         );
 
         const tractGeoids = new Set(results.map((tract) => tract.GEOID));
@@ -298,7 +406,7 @@ export default function App() {
     setResults([]);
     setTractGeoJson(null);
     setMapError("");
-    setSearchedZip("");
+    setZipQRootsScore(null);
 
     const parsed = parseSearchInput(query);
     if (!parsed) {
@@ -318,9 +426,9 @@ export default function App() {
         }
 
         setResults([payload]);
-        setSearchContext(`Showing QRoots score for tract ${payload.GEOID}`);
+        setSearchContext(`Showing QRoots for tract ${payload.GEOID}`);
         setSearchMode("tract");
-        setSearchedZip("");
+        setZipQRootsScore(payload.qroots_score ?? null);
       } else {
         const response = await fetch(`${API_BASE_URL}/zip/${parsed.zipcode}`);
         const payload = await response.json();
@@ -332,11 +440,12 @@ export default function App() {
         setResults(payload.tracts || []);
         setSearchContext(`Showing ${payload.tract_count} tracts for ZIP ${payload.zip}`);
         setSearchMode("zip");
-        setSearchedZip(parsed.zipcode);
+        setZipQRootsScore(payload.zip_qroots_score ?? null);
       }
     } catch (searchError) {
       setError(searchError.message || "Something went wrong while searching.");
       setSearchMode("");
+      setZipQRootsScore(null);
     } finally {
       setLoading(false);
     }
@@ -353,7 +462,7 @@ export default function App() {
             Know where you're planting roots.
           </h1>
           <p className="mt-4 max-w-2xl text-base leading-7 text-slate-600">
-            Search by census tract GEOID or ZIP code to surface housing stability risk,
+            Search by census tract GEOID or ZIP code to surface eviction risk,
             neighborhood vulnerability, and the strongest drivers behind each score.
           </p>
 
@@ -376,7 +485,7 @@ export default function App() {
 
           <p className="mt-3 text-sm text-slate-500">
             Examples: <span className="font-medium text-slate-700">17031010100</span> or{" "}
-            <span className="font-medium text-slate-700">78229</span>
+            <span className="font-medium text-slate-700">78201</span>
           </p>
         </header>
 
@@ -396,6 +505,13 @@ export default function App() {
             </div>
           ) : null}
 
+          {results.length > 0 ? (
+            <QRootsSummaryCard
+              overallScore={searchMode === "zip" ? zipQRootsScore : results[0]?.qroots_score}
+              tract={results[0]}
+            />
+          ) : null}
+
           {searchMode === "zip" && results.length > 0 ? (
             <ZipResultsMap
               tracts={results}
@@ -406,20 +522,21 @@ export default function App() {
           ) : null}
 
           {results.length > 0 ? (
-            <div className="mt-6 grid gap-5 lg:grid-cols-2">
+            <div className="grid gap-5 lg:grid-cols-2">
               {results.map((tract) => (
-                <ResultCard key={tract.GEOID} tract={tract} zip={searchedZip} />
+                <ResultCard key={tract.GEOID} tract={tract} />
               ))}
             </div>
           ) : !loading ? (
             <section className="rounded-[2rem] border border-dashed border-slate-300 bg-white/60 px-8 py-16 text-center">
               <h2 className="text-xl font-semibold text-slate-900">Search a tract or ZIP code to begin</h2>
               <p className="mt-3 text-slate-600">
-                QRoots returns neighborhood quality scores with a transparent
+                QRoots returns tract-level eviction risk predictions with a transparent
                 breakdown of the factors pushing risk up or down.
               </p>
             </section>
           ) : null}
+
         </main>
 
         <footer className="mt-10 rounded-[2rem] border border-white/70 bg-white/70 px-8 py-6 shadow-sm shadow-slate-200/40">
@@ -429,7 +546,8 @@ export default function App() {
             Census ACS, Eviction Lab, CDC PLACES.
           </p>
           <p className="mt-3 text-sm leading-7 text-slate-500">
-            Eviction data reflects 2016 validated records. Model trained on XGBoost with AUC-ROC 0.81.
+            Eviction data reflects 2016 validated records. Model trained on XGBoost with AUC-ROC
+            0.81.
           </p>
           <a
             href="https://github.com/timothytroyhollis-ctrl/QRoots"
@@ -437,10 +555,9 @@ export default function App() {
             rel="noreferrer"
             className="mt-4 inline-flex text-sm font-medium text-teal-700 transition hover:text-teal-800"
           >
-            View the GitHub repository →
+            View the GitHub repository
           </a>
         </footer>
-
       </div>
     </div>
   );
