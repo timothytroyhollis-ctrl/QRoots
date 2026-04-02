@@ -697,3 +697,61 @@ defensive dropping of optional columns, negative value replacement, and clean CS
 - Output: 2,309 county rows saved to data/processed/qol_data.csv
 
 **Next:** Prompt 021 — Build QRoots Composite Score
+
+## Prompt 021 — Build QRoots Composite Score
+**Date:** 2026-03-31  
+**Purpose:** Generate a composite QRoots neighborhood score combining housing stability 
+with walkability, transit, education, and affordability dimensions.
+
+**Prompt:**  
+Write a Python script called build_qroots_score.py that creates a composite QRoots 
+neighborhood score by merging two datasets. Load data/processed/shap_explanations_all.csv 
+which has GEOID (11-digit tract) and predicted_risk_score columns. Load 
+data/processed/qol_data.csv which has fips (5-digit county), avg_walk_score, 
+avg_transit_score, avg_bike_score, edu_pct, qol_index, median_household_income, and fmr_2 
+columns. Join the two datasets by matching the first 5 digits of GEOID to fips. Compute a 
+composite qroots_score on a 0-100 scale using these weighted components: housing stability 
+40% (inverted predicted_risk_score), walkability 20% (avg_walk_score normalized 0-100), 
+transit 15% (avg_transit_score normalized 0-100), education 15% (edu_pct normalized 0-100), 
+affordability 10% (inverted fmr_2 normalized). Save output to data/processed/qroots_scores.csv 
+with columns: GEOID, predicted_risk_score, qroots_score, housing_stability_score, walk_score, 
+transit_score, education_score, affordability_score. Print row count and score distribution.
+
+**Codex Output Summary:**  
+Codex generated build_qroots_score.py with min-max normalization helper, weighted composite 
+scoring, median imputation for null component scores, county-to-tract join via first 5 digits 
+of GEOID, and clean deduplication on GEOID before saving.
+
+**Key Design Decisions:**  
+- Housing stability weighted highest at 40% — core differentiator from generic QoL tools
+- Walk and transit scores used directly from Walk Score data in qol_data.csv
+- fmr_2 (2-bedroom FMR) chosen as affordability proxy — most representative for families
+- Median imputation applied per component so missing county QoL data doesn't zero out score
+- Score clipped 0-100 after weighting to handle edge cases
+
+**Results:**  
+- 85,396 tracts scored successfully
+- Mean score: 51.9, Std: 13.4, Min: 14.1, Max: 90.6
+- Well-calibrated distribution centered near 50 with good spread
+
+**Next:** Prompt 022 — Update API to Serve QRoots Scores
+
+---
+
+## Prompt 022 — Update API to Serve QRoots Scores
+**Date:** 2026-03-31  
+**Purpose:** Update FastAPI back end to serve QRoots composite scores alongside 
+existing eviction risk data.
+
+**Prompt:**  
+Update api/main.py to load data/processed/qroots_scores.csv on startup and merge it 
+with the existing shap_explanations_all.csv data. Add qroots_score, housing_stability_score, 
+walk_score, transit_score, education_score, and affordability_score fields to the GET 
+/tract/{geoid} and GET /zip/{zipcode} responses. For the zip endpoint include the average 
+qroots_score across all returned tracts as a zip_qroots_score field at the top level of 
+the response.
+
+**Codex Output Summary:**  
+*(To be filled in after Codex generates the script)*
+
+**Next:** Prompt 023 — Update React Front End for QRoots Dashboard

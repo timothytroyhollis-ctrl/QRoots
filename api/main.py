@@ -1,6 +1,6 @@
 from pathlib import Path
-
 import httpx
+
 import pandas as pd
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -9,6 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 SHAP_PATH = Path("data/processed/shap_explanations_all.csv")
 MODELING_PATH = Path("data/processed/modeling_dataset.csv")
 ZIP_CROSSWALK_PATH = Path("data/processed/zip_tract_crosswalk.csv")
+QROOTS_SCORES_PATH = Path("data/processed/qroots_scores.csv")
 
 RISK_LABELS = {
     "median_household_income": "Median household income",
@@ -24,7 +25,7 @@ RISK_LABELS = {
     "frequent_mental_distress": "Frequent mental distress",
 }
 
-app = FastAPI(title="RootScore API")
+app = FastAPI(title="QRoots API")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -53,7 +54,7 @@ def risk_tier(score: float) -> str:
     return "low"
 
 
-def build_driving_factors(row: pd.Series) -> list:
+def build_driving_factors(row: pd.Series) -> list[dict]:
     drivers = []
     for rank in range(1, 4):
         feature_key = row.get(f"top_feature_{rank}")
@@ -76,12 +77,17 @@ def load_data() -> None:
         raise FileNotFoundError(f"Missing modeling dataset file: {MODELING_PATH}")
     if not ZIP_CROSSWALK_PATH.exists():
         raise FileNotFoundError(f"Missing ZIP crosswalk file: {ZIP_CROSSWALK_PATH}")
+    if not QROOTS_SCORES_PATH.exists():
+        raise FileNotFoundError(f"Missing QRoots scores file: {QROOTS_SCORES_PATH}")
 
     shap_df = pd.read_csv(SHAP_PATH, dtype={"GEOID": "string"})
     shap_df["GEOID"] = shap_df["GEOID"].astype("string").map(normalize_geoid)
 
     modeling_df = pd.read_csv(MODELING_PATH, dtype={"GEOID": "string"})
     modeling_df["GEOID"] = modeling_df["GEOID"].astype("string").map(normalize_geoid)
+
+    qroots_scores_df = pd.read_csv(QROOTS_SCORES_PATH, dtype={"GEOID": "string"})
+    qroots_scores_df["GEOID"] = qroots_scores_df["GEOID"].astype("string").map(normalize_geoid)
 
     zip_crosswalk_df = pd.read_csv(
         ZIP_CROSSWALK_PATH,
@@ -94,12 +100,16 @@ def load_data() -> None:
 
     app.state.shap_df = shap_df
     app.state.modeling_df = modeling_df
+    app.state.qroots_scores_df = qroots_scores_df
     app.state.zip_crosswalk_df = zip_crosswalk_df
-    app.state.tract_df = shap_df.merge(modeling_df, on="GEOID", how="left", suffixes=("", "_model"))
+    app.state.tract_df = (
+        shap_df.merge(modeling_df, on="GEOID", how="left", suffixes=("", "_model"))
+        .merge(qroots_scores_df, on="GEOID", how="left", suffixes=("", "_qroots"))
+    )
 
 
 @app.get("/health")
-def health() -> dict:
+def health() -> dict[str, str]:
     return {"status": "ok"}
 
 
@@ -120,6 +130,18 @@ def get_tract(geoid: str) -> dict:
         "GEOID": normalized_geoid,
         "predicted_risk_score": score,
         "risk_tier": risk_tier(score),
+        "qroots_score": None if pd.isna(row.get("qroots_score")) else float(row["qroots_score"]),
+        "housing_stability_score": None
+        if pd.isna(row.get("housing_stability_score"))
+        else float(row["housing_stability_score"]),
+        "walk_score": None if pd.isna(row.get("walk_score")) else float(row["walk_score"]),
+        "transit_score": None if pd.isna(row.get("transit_score")) else float(row["transit_score"]),
+        "education_score": None
+        if pd.isna(row.get("education_score"))
+        else float(row["education_score"]),
+        "affordability_score": None
+        if pd.isna(row.get("affordability_score"))
+        else float(row["affordability_score"]),
         "top_driving_factors": build_driving_factors(row),
     }
 
@@ -147,6 +169,18 @@ def get_zip(zipcode: str) -> dict:
                 "GEOID": row["GEOID"],
                 "predicted_risk_score": score,
                 "risk_tier": risk_tier(score),
+                "qroots_score": None if pd.isna(row.get("qroots_score")) else float(row["qroots_score"]),
+                "housing_stability_score": None
+                if pd.isna(row.get("housing_stability_score"))
+                else float(row["housing_stability_score"]),
+                "walk_score": None if pd.isna(row.get("walk_score")) else float(row["walk_score"]),
+                "transit_score": None if pd.isna(row.get("transit_score")) else float(row["transit_score"]),
+                "education_score": None
+                if pd.isna(row.get("education_score"))
+                else float(row["education_score"]),
+                "affordability_score": None
+                if pd.isna(row.get("affordability_score"))
+                else float(row["affordability_score"]),
                 "top_driving_factors": build_driving_factors(row),
             }
         )
@@ -154,37 +188,27 @@ def get_zip(zipcode: str) -> dict:
     return {
         "zip": normalized_zip,
         "tract_count": len(tracts),
+        "zip_qroots_score": None
+        if tract_df["qroots_score"].dropna().empty
+        else float(tract_df["qroots_score"].dropna().mean()),
         "tracts": tracts,
     }
-
 
 @app.get("/tracts/geojson/{state_fips}")
 async def get_tract_geojson(state_fips: str, geoids: str = "") -> dict:
     tiger_url = "https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/Tracts_Blocks/MapServer/0/query"
-
     geoid_list = [g.strip() for g in geoids.split(",") if g.strip()]
     if geoid_list:
         where_clause = "GEOID IN ('" + "','".join(geoid_list) + "')"
     else:
         where_clause = f"STATE='{state_fips}'"
-
     params = {
         "where": where_clause,
         "outFields": "GEOID,STATE,COUNTY,TRACT,NAME",
         "outSR": "4326",
         "f": "geojson",
     }
-
     async with httpx.AsyncClient(timeout=30) as client:
         response = await client.get(tiger_url, params=params)
         response.raise_for_status()
         return response.json()
-
-@app.get("/")
-def root():
-    return {
-        "api": "RootScore API",
-        "version": "0.1.0",
-        "docs": "/docs",
-        "endpoints": ["/health", "/tract/{geoid}", "/zip/{zipcode}", "/tracts/geojson/{state_fips}"]
-    }
