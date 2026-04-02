@@ -1,7 +1,7 @@
 # RootScore — Codex Prompt Log
 **Project:** RootScore — Neighborhood Eviction Risk Tool  
 **Contest:** OpenAI Codex Contest 2026  
-**Author:** Tim Slimak  
+**Author:** Tim Hollis
 **Submission Deadline:** April 30, 2026
 
 ---
@@ -600,3 +600,100 @@ design language.
 - ZIP label added to each result card so users know which ZIP they searched
 
 **Next:** Deployment to Public URL
+
+## Deployment — Production Launch
+**Date:** 2026-03-30  
+**Purpose:** Deploy RootScore to public URLs for contest submission.
+
+**Services Deployed:**  
+- FastAPI back end → https://rootscore-api.onrender.com
+- React front end → https://rootscore.onrender.com
+
+**Key Decisions:**  
+- Render.com chosen for free tier, zero credit card requirement, and public URLs
+- Data files uploaded directly to GitHub since they were under 100MB
+- Python 3.11 pinned via PYTHON_VERSION environment variable to avoid Python 3.14 
+  hash conflicts
+- react-leaflet v5 used with legacy-peer-deps flag due to React 19 incompatibility 
+  with v4
+- Start command uses $PORT not hardcoded 8000 for Render port binding
+
+**Real-World Discoveries:**  
+- pip freeze generates Windows file:// paths that break Linux deployment. Fixed with 
+  clean manually written requirements.txt
+- Render caches builds — hash mismatch errors required clearing build cache and 
+  setting PYTHON_VERSION environment variable
+- data/processed/ and models/ excluded from .gitignore but uploaded manually to 
+  GitHub for deployment
+
+**Next:** NeighborhoodScore — Evolve RootScore into a full relocation quality of life tool
+
+## Prompt 019 — QRoots Rebrand
+**Date:** 2026-03-31  
+**Purpose:** Rebrand the entire project from RootScore to QRoots with updated tagline.
+
+**Prompt:**  
+Update app/src/App.jsx to rebrand from RootScore to QRoots. Change the header name to 
+QRoots. Change the tagline to 'Know where you're planting roots.' Update the footer ethics 
+statement to reference QRoots. Update the GitHub link to 
+https://github.com/timothytroyhollis-ctrl/QRoots. Keep all functionality identical.
+
+**Codex Output Summary:**  
+Codex updated App.jsx renaming all RootScore references to QRoots, updated the tagline, 
+footer ethics statement, search button label, and GitHub repository link.
+
+**Key Design Decisions:**  
+- QRoots chosen as brand name — Quality of Roots, putting down roots
+- Tagline changed to "Know where you're planting roots" to reflect relocation use case
+- GitHub repo renamed from RootScore to QRoots on GitHub and local remote updated
+- All functionality preserved — only branding strings changed
+
+**Real-World Discoveries:**  
+- Codex reverted API_BASE_URL to localhost and TIGER_TRACTS_URL to Census direct URL.
+  Both required manual correction to production Render URLs after Codex edit.
+- fetchStateTractsGeoJson also reverted to state-wide fetch — restored to GEOID-specific 
+  approach to avoid timeout.
+
+**Next:** Prompt 020 — QoL Data Ingestion from DSC540
+
+---
+
+## Prompt 020 — QoL Data Ingestion from DSC540
+**Date:** 2026-03-31  
+**Purpose:** Process the DSC540 Quality of Life dataset for use in QRoots composite score.
+
+**Prompt:**  
+Write a Python script called pull_qol_data.py that processes the DSC540 Quality of Life 
+dataset from data/raw/qol_ranked.csv. This file has county-level data with columns: fips, 
+county, state, total_population, median_household_income, poverty_count, edu_pct, fmr_0, 
+fmr_1, fmr_2, fmr_3, fmr_4, avg_walk_score, avg_transit_score, avg_bike_score, city_count, 
+qol_index. Clean the data by: standardizing the fips column to 5 digits with zero-padding, 
+renaming columns to snake_case, dropping city_count and hud_pop2020 columns, replacing any 
+negative values with NaN. Save the cleaned output to data/processed/qol_data.csv and print 
+the row count and column list.
+
+**Data Provenance Note:**  
+qol_ranked.csv was produced in prior academic work (DSC540 Data Preparation, 
+Bellevue University, March 2026) which explored Transportation Access, Living Costs, 
+and Quality of Life across U.S. Cities. That project used HUD FMR, Walk Score, and 
+Census ACS data to build a county-level QoL index. This file is used here as a 
+pre-processed data source, similar to how Eviction Lab data was downloaded and used 
+directly. All QRoots-specific processing, scoring, API, and front end work was built 
+entirely with Codex during this contest period.
+
+**Codex Output Summary:**  
+Codex generated pull_qol_data.py with snake_case column renaming, FIPS zero-padding, 
+defensive dropping of optional columns, negative value replacement, and clean CSV output.
+
+**Key Design Decisions:**  
+- DSC540 qol_ranked.csv chosen as source — already contains Walk Score, transit, 
+  bike score, education, HUD FMR, and composite QoL index at county level
+- county-level data joins to tract-level data via first 5 digits of GEOID
+- Negative values replaced with NaN rather than dropped to preserve row count
+
+**Real-World Discoveries:**  
+- OUTPUT_PATH was hardcoded to Windows absolute path by Codex. Fixed to relative path 
+  data/processed/qol_data.csv for cross-platform compatibility.
+- Output: 2,309 county rows saved to data/processed/qol_data.csv
+
+**Next:** Prompt 021 — Build QRoots Composite Score
