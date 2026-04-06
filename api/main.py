@@ -1,6 +1,7 @@
 import json
 from collections import Counter
 from pathlib import Path
+import os
 
 import httpx
 import pandas as pd
@@ -74,13 +75,14 @@ def build_driving_factors(row: pd.Series) -> list[dict]:
 
 
 def load_openai_client() -> OpenAI:
-    if not OPENAI_CONFIG_PATH.exists():
-        raise FileNotFoundError(f"Missing OpenAI config file: {OPENAI_CONFIG_PATH}")
-    with OPENAI_CONFIG_PATH.open("r", encoding="utf-8") as config_file:
-        config = json.load(config_file)
-    api_key = config.get("api_key", "").strip()
+    api_key = os.environ.get("OPENAI_API_KEY")
     if not api_key:
-        raise KeyError("Missing 'api_key' in openai_config.json")
+        if OPENAI_CONFIG_PATH.exists():
+            with OPENAI_CONFIG_PATH.open("r", encoding="utf-8") as f:
+                config = json.load(f)
+            api_key = config.get("api_key", "").strip()
+    if not api_key:
+        raise ValueError("OpenAI API key not found in environment or config file.")
     return OpenAI(api_key=api_key)
 
 
