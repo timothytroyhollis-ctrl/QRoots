@@ -1,15 +1,19 @@
+import json
+from collections import Counter
 from pathlib import Path
-import httpx
 
+import httpx
 import pandas as pd
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from openai import OpenAI
 
 
 SHAP_PATH = Path("data/processed/shap_explanations_all.csv")
 MODELING_PATH = Path("data/processed/modeling_dataset.csv")
 ZIP_CROSSWALK_PATH = Path("data/processed/zip_tract_crosswalk.csv")
 QROOTS_SCORES_PATH = Path("data/processed/qroots_scores.csv")
+OPENAI_CONFIG_PATH = Path("openai_config.json")
 
 RISK_LABELS = {
     "median_household_income": "Median household income",
@@ -69,6 +73,17 @@ def build_driving_factors(row: pd.Series) -> list[dict]:
     return drivers
 
 
+def load_openai_client() -> OpenAI:
+    if not OPENAI_CONFIG_PATH.exists():
+        raise FileNotFoundError(f"Missing OpenAI config file: {OPENAI_CONFIG_PATH}")
+    with OPENAI_CONFIG_PATH.open("r", encoding="utf-8") as config_file:
+        config = json.load(config_file)
+    api_key = config.get("api_key", "").strip()
+    if not api_key:
+        raise KeyError("Missing 'api_key' in openai_config.json")
+    return OpenAI(api_key=api_key)
+
+
 @app.on_event("startup")
 def load_data() -> None:
     if not SHAP_PATH.exists():
@@ -93,7 +108,12 @@ def load_data() -> None:
         ZIP_CROSSWALK_PATH,
         dtype={"zip": "string", "tract_geoid": "string"},
     )
-    zip_crosswalk_df["zip"] = zip_crosswalk_df["zip"].astype("string").str.extract(r"(\d+)", expand=False).str.zfill(5)
+    zip_crosswalk_df["zip"] = (
+        zip_crosswalk_df["zip"]
+        .astype("string")
+        .str.extract(r"(\d+)", expand=False)
+        .str.zfill(5)
+    )
     zip_crosswalk_df["tract_geoid"] = (
         zip_crosswalk_df["tract_geoid"].astype("string").map(normalize_geoid)
     )
@@ -193,6 +213,65 @@ def get_zip(zipcode: str) -> dict:
         else float(tract_df["qroots_score"].dropna().mean()),
         "tracts": tracts,
     }
+
+
+@app.get("/summary/{zipcode}")
+def get_zip_summary(zipcode: str) -> dict:
+    normalized_zip = "".join(c for c in str(zipcode) if c.isdigit()).zfill(5)
+    if len(normalized_zip) != 5:
+        raise HTTPException(status_code=400, detail="ZIP code must be 5 digits.")
+
+    crosswalk_df = app.state.zip_crosswalk_df
+    matched = crosswalk_df.loc[crosswalk_df["zip"] == normalized_zip]
+    if matched.empty:
+        raise HTTPException(status_code=404, detail="ZIP code not found in crosswalk.")
+
+    tract_geoids = matched["tract_geoid"].dropna().drop_duplicates().tolist()
+    tract_df = app.state.tract_df.loc[app.state.tract_df["GEOID"].isin(tract_geoids)].copy()
+
+    def safe_mean(col: str):
+        series = tract_df[col].dropna()
+        return round(float(series.mean()), 1) if not series.empty else None
+
+    metrics = {
+        "overall_qroots_score": safe_mean("qroots_score"),
+        "housing_stability": safe_mean("housing_stability_score"),
+        "walkability": safe_mean("walk_score"),
+        "transit": safe_mean("transit_score"),
+        "education": safe_mean("education_score"),
+        "affordability": safe_mean("affordability_score"),
+    }
+
+    factor_counts: Counter = Counter()
+    for rank in range(1, 4):
+        factor_counts.update(
+            feature_label(f)
+            for f in tract_df[f"top_feature_{rank}"].dropna().astype(str).tolist()
+        )
+    top_factors = [label for label, _ in factor_counts.most_common(5)]
+
+    prompt = (
+        f"You are writing a plain-language neighborhood summary for ZIP code {normalized_zip}. "
+        f"Write 3-4 sentences for someone considering moving there. Use cautious, practical "
+        f"language. Avoid hype and jargon. Mention strengths and tradeoffs when appropriate.\n\n"
+        f"Neighborhood scores (0-100 scale): {metrics}\n"
+        f"Most common driving factors: {top_factors}\n"
+        f"Number of census tracts analyzed: {len(tract_df)}"
+    )
+
+    try:
+        client = load_openai_client()
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=180,
+        )
+        summary = response.choices[0].message.content.strip()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"OpenAI API error: {str(e)}")
+
+    return {"summary": summary}
+
 
 @app.get("/tracts/geojson/{state_fips}")
 async def get_tract_geojson(state_fips: str, geoids: str = "") -> dict:
