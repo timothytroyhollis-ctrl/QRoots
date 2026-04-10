@@ -5,7 +5,7 @@ import os
 
 import httpx
 import pandas as pd
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from openai import OpenAI
 
@@ -14,6 +14,7 @@ SHAP_PATH = Path("data/processed/shap_explanations_all.csv")
 MODELING_PATH = Path("data/processed/modeling_dataset.csv")
 ZIP_CROSSWALK_PATH = Path("data/processed/zip_tract_crosswalk.csv")
 QROOTS_SCORES_PATH = Path("data/processed/qroots_scores.csv")
+EXPLORER_INDEX_PATH = Path("data/processed/explorer_index.csv")
 OPENAI_CONFIG_PATH = Path("openai_config.json")
 
 RISK_LABELS = {
@@ -96,6 +97,8 @@ def load_data() -> None:
         raise FileNotFoundError(f"Missing ZIP crosswalk file: {ZIP_CROSSWALK_PATH}")
     if not QROOTS_SCORES_PATH.exists():
         raise FileNotFoundError(f"Missing QRoots scores file: {QROOTS_SCORES_PATH}")
+    if not EXPLORER_INDEX_PATH.exists():
+        raise FileNotFoundError(f"Missing explorer index file: {EXPLORER_INDEX_PATH}")
 
     shap_df = pd.read_csv(SHAP_PATH, dtype={"GEOID": "string"})
     shap_df["GEOID"] = shap_df["GEOID"].astype("string").map(normalize_geoid)
@@ -105,6 +108,25 @@ def load_data() -> None:
 
     qroots_scores_df = pd.read_csv(QROOTS_SCORES_PATH, dtype={"GEOID": "string"})
     qroots_scores_df["GEOID"] = qroots_scores_df["GEOID"].astype("string").map(normalize_geoid)
+
+    explorer_df = pd.read_csv(
+        EXPLORER_INDEX_PATH,
+        dtype={"GEOID": "string", "zip": "string", "state_fips": "string", "state_abbr": "string"},
+    )
+    explorer_df["GEOID"] = explorer_df["GEOID"].astype("string").map(normalize_geoid)
+    explorer_df["zip"] = (
+        explorer_df["zip"]
+        .astype("string")
+        .str.extract(r"(\d+)", expand=False)
+        .str.zfill(5)
+    )
+    explorer_df["state_fips"] = (
+        explorer_df["state_fips"]
+        .astype("string")
+        .str.extract(r"(\d+)", expand=False)
+        .str.zfill(2)
+    )
+    explorer_df["state_abbr"] = explorer_df["state_abbr"].astype("string").str.upper()
 
     zip_crosswalk_df = pd.read_csv(
         ZIP_CROSSWALK_PATH,
@@ -123,6 +145,7 @@ def load_data() -> None:
     app.state.shap_df = shap_df
     app.state.modeling_df = modeling_df
     app.state.qroots_scores_df = qroots_scores_df
+    app.state.explorer_df = explorer_df
     app.state.zip_crosswalk_df = zip_crosswalk_df
     app.state.tract_df = (
         shap_df.merge(modeling_df, on="GEOID", how="left", suffixes=("", "_model"))
@@ -293,3 +316,88 @@ async def get_tract_geojson(state_fips: str, geoids: str = "") -> dict:
         response = await client.get(tiger_url, params=params)
         response.raise_for_status()
         return response.json()
+
+
+@app.get("/explore")
+def explore(
+    state_abbr: str = Query(..., min_length=2, max_length=2),
+    min_qroots: float = 0,
+    min_housing: float = 0,
+    min_walk: float = 0,
+    min_transit: float = 0,
+    min_education: float = 0,
+    min_affordability: float = 0,
+    weight_housing: float = 0.40,
+    weight_walk: float = 0.20,
+    weight_transit: float = 0.15,
+    weight_education: float = 0.15,
+    weight_affordability: float = 0.10,
+    limit: int = Query(10, ge=1, le=25),
+) -> dict:
+    explorer_df = app.state.explorer_df.copy()
+    filtered_df = explorer_df.loc[explorer_df["state_abbr"] == state_abbr.upper()].copy()
+
+    filtered_df = filtered_df.loc[
+        (filtered_df["qroots_score"] >= min_qroots)
+        & (filtered_df["housing_stability_score"] >= min_housing)
+        & (filtered_df["walk_score"] >= min_walk)
+        & (filtered_df["transit_score"] >= min_transit)
+        & (filtered_df["education_score"] >= min_education)
+        & (filtered_df["affordability_score"] >= min_affordability)
+    ].copy()
+
+    if filtered_df.empty:
+        raise HTTPException(status_code=404, detail="No results match the requested filters.")
+
+    filtered_df["custom_score"] = (
+        filtered_df["housing_stability_score"] * weight_housing
+        + filtered_df["walk_score"] * weight_walk
+        + filtered_df["transit_score"] * weight_transit
+        + filtered_df["education_score"] * weight_education
+        + filtered_df["affordability_score"] * weight_affordability
+    )
+
+    grouped_df = (
+        filtered_df.dropna(subset=["zip"])
+        .groupby("zip", as_index=False)
+        .agg(
+            state_abbr=("state_abbr", "first"),
+            custom_score=("custom_score", "mean"),
+            avg_qroots_score=("qroots_score", "mean"),
+            avg_housing_stability=("housing_stability_score", "mean"),
+            avg_walk_score=("walk_score", "mean"),
+            avg_transit_score=("transit_score", "mean"),
+            avg_education_score=("education_score", "mean"),
+            avg_affordability_score=("affordability_score", "mean"),
+            tract_count=("GEOID", "nunique"),
+        )
+        .sort_values("custom_score", ascending=False)
+        .head(limit)
+        .reset_index(drop=True)
+    )
+
+    if grouped_df.empty:
+        raise HTTPException(status_code=404, detail="No ZIP-level results match the requested filters.")
+
+    results = []
+    for _, row in grouped_df.iterrows():
+        results.append(
+            {
+                "zip": row["zip"],
+                "state_abbr": row["state_abbr"],
+                "custom_score": float(row["custom_score"]),
+                "avg_qroots_score": float(row["avg_qroots_score"]),
+                "avg_housing_stability": float(row["avg_housing_stability"]),
+                "avg_walk_score": float(row["avg_walk_score"]),
+                "avg_transit_score": float(row["avg_transit_score"]),
+                "avg_education_score": float(row["avg_education_score"]),
+                "avg_affordability_score": float(row["avg_affordability_score"]),
+                "tract_count": int(row["tract_count"]),
+            }
+        )
+
+    return {
+        "state_abbr": state_abbr.upper(),
+        "result_count": len(results),
+        "results": results,
+    }
