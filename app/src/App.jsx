@@ -54,6 +54,7 @@ const weightConfig = [
   { key: "transit", label: "Transit" },
   { key: "education", label: "Education" },
   { key: "affordability", label: "Affordability" },
+  { key: "lgbt", label: "LGBT Policy" },
 ];
 
 const stateInfoByFips = {
@@ -512,6 +513,7 @@ function ExplorerResultCard({ result, rank }) {
         <MiniDimensionBar label="Transit" value={result.avg_transit_score} />
         <MiniDimensionBar label="Education" value={result.avg_education_score} />
         <MiniDimensionBar label="Affordability" value={result.avg_affordability_score} />
+        <MiniDimensionBar label="LGBT Policy" value={result.avg_lgbt_score} />
       </div>
     </article>
   );
@@ -533,8 +535,8 @@ export default function App() {
   const [zipSummary, setZipSummary] = useState("");
   const [summaryLoading, setSummaryLoading] = useState(false);
   const [exploreState, setExploreState] = useState("TX");
-  const [exploreWeights, setExploreWeights] = useState({ housing: 40, walk: 20, transit: 15, education: 15, affordability: 10 });
-  const [exploreMins, setExploreMins] = useState({ housing: 0, walk: 0, transit: 0, education: 0, affordability: 0 });
+  const [exploreWeights, setExploreWeights] = useState({ housing: 40, walk: 20, transit: 15, education: 15, affordability: 10, lgbt: 0 });
+  const [exploreMins, setExploreMins] = useState({ housing: 0, walk: 0, transit: 0, education: 0, affordability: 0, lgbt: 0 });
   const [exploreLimit, setExploreLimit] = useState(10);
   const [exploreLoading, setExploreLoading] = useState(false);
   const [exploreError, setExploreError] = useState("");
@@ -665,11 +667,13 @@ export default function App() {
         min_transit: String(exploreMins.transit),
         min_education: String(exploreMins.education),
         min_affordability: String(exploreMins.affordability),
+        min_lgbt: String(exploreMins.lgbt),
         weight_housing: String(exploreWeights.housing / 100),
         weight_walk: String(exploreWeights.walk / 100),
         weight_transit: String(exploreWeights.transit / 100),
         weight_education: String(exploreWeights.education / 100),
         weight_affordability: String(exploreWeights.affordability / 100),
+        weight_lgbt: String(exploreWeights.lgbt / 100),
         limit: String(exploreLimit),
       });
       const response = await fetch(`${API_BASE_URL}/explore?${params.toString()}`);
