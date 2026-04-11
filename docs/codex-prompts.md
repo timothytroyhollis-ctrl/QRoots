@@ -1037,4 +1037,164 @@ and tab switching logic. Tabs moved into header card below search form for integ
 - Weight sliders rebalance proportionally when adjusted
 - Find My Neighborhood returns ranked ZIP cards with dimension breakdowns
 
+**Next:** Prompt 031 — Resource Links on Search Result Cards
+
+---
+
+## Prompt 031 — Resource Links on Search Result Cards
+**Date:** 2026-04-10
+**Purpose:** Add contextual resource links to each tract result card in the Search tab.
+
+**Prompt:**
+Add a collapsible Resources section to the ResultCard component in app/src/App.jsx.
+After the top driving factors section add a toggle button that expands to show 7
+resource links generated dynamically from the tract ZIP and state: Housing Assistance
+(HUD), Walk Score, Transit (Google Maps), Schools (GreatSchools), Rental Affordability
+(HUD FMR), Mental Health Resources (SAMHSA findtreatment.gov), and LGBT Resources
+(MAP state profile). Links requiring ZIP context show a disabled state when searched
+by GEOID only. MAP LGBT Resources URL uses /equality-maps/profile_state/{STATE_ABBR}
+format confirmed from MAP website.
+
+**Codex Output Summary:**
+Codex added stateInfoByFips lookup constant, resourcesOpen state to ResultCard,
+collapsible Resources section with 7 dynamic links, and disabled fallback for
+ZIP-dependent links when ZIP context is unavailable.
+
+**Key Design Decisions:**
+- stateInfoByFips maps state FIPS to both abbr and name for MAP URL construction
+- ZIP-dependent links disabled gracefully when tract searched by GEOID only
+- MAP profile URL confirmed as /equality-maps/profile_state/{ABBR} not state name
+- Walk Score URL corrected from /score/zip/{zip} to /score/{zip}
+- Transit URL uses +USA suffix to prevent Google Maps international geocoding
+
+**Real-World Discoveries:**
+- MAP equality maps URL uses /profile_state/{STATE_ABBR} format not state name
+- Walk Score URL /score/zip/{zip} returns Tel Aviv — correct URL is /score/{zip}
+- Google Maps Transit link geocoded to Tel Aviv without +USA suffix on ZIP
+
+**Results:**
+- All 7 resource links working correctly on live site
+- Collapsible Show/Hide toggle working on all result cards
+- LGBT Resources links to correct state MAP profile page
+
+**Next:** Prompt 032 — LGBT Policy Score Data Pipeline
+
+---
+
+## Prompt 032 — LGBT Policy Score Data Pipeline
+**Date:** 2026-04-10
+**Purpose:** Add normalized MAP LGBT policy score as a sixth dimension to the
+explorer index using hardcoded state-level policy tally scores.
+
+**Prompt:**
+Write a Python script called build_lgbt_index.py that adds a normalized LGBT policy
+score to data/processed/explorer_index.csv. Use a hardcoded dictionary of MAP state
+policy tally scores for all 50 states plus DC ranging from -31 to +49. Normalize to
+0-100 using min-max normalization. Join on state_abbr and save updated explorer_index.csv
+with new lgbt_policy_score column. Print row count and top 5 and bottom 5 states.
+
+**Codex Output Summary:**
+Codex generated build_lgbt_index.py with hardcoded MAP overall tally scores for all
+50 states plus DC, min-max normalization, state_abbr join, and printed ranking summary.
+
+**Key Design Decisions:**
+- MAP overall policy tally scores hardcoded — no API available, scores change with legislation
+- Min-max normalization maps -18 (MS) to 0 and 46 (DC) to 100
+- lgbt_policy_score is state-level not tract-level — all tracts in a state share same score
+- Script runs after build_explorer_index.py in the data pipeline
+
+**Results:**
+- 85,396 rows saved with lgbt_policy_score column added
+- DC: 100.0, CA: 96.875, MA: 96.875, VT: 96.875 at top
+- MS: 0.0, LA: 6.25, AR: 6.25, AL: 9.375 at bottom
+- TX normalized score: 21.875
+
+**Next:** Prompt 033 — LGBT Policy Score in Explorer API
+
+---
+
+## Prompt 033 — LGBT Policy Score in Explorer API
+**Date:** 2026-04-10
+**Purpose:** Add lgbt_policy_score as a sixth dimension to the /explore endpoint.
+
+**Prompt:**
+Update api/main.py to add lgbt_policy_score as a sixth dimension to the /explore
+endpoint. Add min_lgbt (default 0) and weight_lgbt (default 0.0) query parameters.
+Include lgbt_policy_score in minimum score filter, custom_score calculation, and
+ZIP-level aggregation as avg_lgbt_score. Return avg_lgbt_score in each result object.
+
+**Codex Output Summary:**
+Codex added min_lgbt and weight_lgbt parameters, updated filter logic, custom_score
+calculation, groupby aggregation, and result serialization to include avg_lgbt_score.
+
+**Key Design Decisions:**
+- weight_lgbt defaults to 0.0 so existing searches are unaffected
+- LGBT score participates in custom_score only when weight_lgbt > 0
+- avg_lgbt_score always returned in results for display in UI regardless of weight
+
+**Results:**
+- GET /explore?state_abbr=CA&weight_lgbt=1.0 returns avg_lgbt_score of 96.875
+- GET /explore?state_abbr=TX&weight_lgbt=1.0 returns avg_lgbt_score of 21.875
+- Scores confirmed correct against MAP tally lookup table
+
+**Next:** Prompt 034 — LGBT Policy Slider in Explorer UI
+
+---
+
+## Prompt 034 — LGBT Policy Slider in Explorer UI
+**Date:** 2026-04-10
+**Purpose:** Add LGBT Policy as a sixth dimension weight slider and mini bar in
+the Explorer tab UI.
+
+**Prompt:**
+Update app/src/App.jsx to add LGBT Policy as a sixth dimension to the Explorer tab.
+Add lgbt to weightConfig with label LGBT Policy. Add weight_lgbt and min_lgbt to
+exploreWeights and exploreMins state with defaults of 0. Include in handleExplore
+API params. Add avg_lgbt_score MiniDimensionBar to ExplorerResultCard.
+
+**Codex Output Summary:**
+Codex added lgbt to weightConfig array, updated exploreWeights and exploreMins
+initial state, added weight_lgbt and min_lgbt to handleExplore URLSearchParams,
+and added LGBT Policy MiniDimensionBar to ExplorerResultCard.
+
+**Key Design Decisions:**
+- lgbt weight defaults to 0 so standard searches are unaffected until user adjusts
+- rebalanceWeights automatically handles six dimensions without modification
+- LGBT Policy mini bar always visible on Explorer result cards
+
+**Results:**
+- LGBT Policy slider appears in Explorer dimension weights section
+- Sliding LGBT Policy to 100% correctly shifts rankings toward high-policy states
+- Mini bar shows correct state-level score on all Explorer result cards
+
+**Next:** Prompt 035 — Resource Links on Explorer Result Cards
+
+---
+
+## Prompt 035 — Resource Links on Explorer Result Cards
+**Date:** 2026-04-10
+**Purpose:** Add the same collapsible resource links from Search result cards to
+Explorer result cards.
+
+**Prompt:**
+Update ExplorerResultCard in app/src/App.jsx to add a collapsible Resources section
+identical to ResultCard. Build a reverse lookup from state_abbr to stateInfo using
+stateInfoByFips. Generate all 7 resource links using result.zip and result.state_abbr.
+Use same Show/Hide toggle, teal link styling, and disabled state pattern as ResultCard.
+
+**Codex Output Summary:**
+Codex added stateInfoByAbbr reverse lookup constant, resourcesOpen state to
+ExplorerResultCard, and identical 7-link Resources section using result.zip and
+result.state_abbr for dynamic URL generation.
+
+**Key Design Decisions:**
+- Reverse lookup from state_abbr to stateInfo avoids duplicating the FIPS lookup
+- All 7 links available on Explorer cards since ZIP is always present in Explorer results
+- Consistent UX between Search and Explorer result cards
+
+**Results:**
+- Resource links live on Explorer result cards
+- All 7 links working correctly including MAP LGBT state profile
+- Show/Hide toggle working on Explorer cards
+
 **Next:** Final contest submission on Handshake before April 30, 2026

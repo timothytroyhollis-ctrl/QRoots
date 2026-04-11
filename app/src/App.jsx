@@ -111,6 +111,10 @@ const stateInfoByFips = {
   "56": { abbr: "WY", name: "Wyoming" },
 };
 
+const stateInfoByAbbr = Object.fromEntries(
+  Object.values(stateInfoByFips).map((stateInfo) => [stateInfo.abbr, stateInfo])
+);
+
 function parseSearchInput(value) {
   const trimmed = value.trim();
   const digitsOnly = trimmed.replace(/\D/g, "");
@@ -491,6 +495,51 @@ function ResultCard({ tract, zip }) {
 }
 
 function ExplorerResultCard({ result, rank }) {
+  const [resourcesOpen, setResourcesOpen] = useState(false);
+  const stateInfo = stateInfoByAbbr[result.state_abbr];
+  const zipEnabled = Boolean(result.zip);
+  const resources = [
+    {
+      label: "Housing Assistance",
+      href: "https://www.hud.gov/topics/rental_assistance",
+      enabled: true,
+    },
+    {
+      label: "Walk Score",
+      href: zipEnabled ? `https://www.walkscore.com/score/${result.zip}` : "#",
+      enabled: zipEnabled,
+    },
+    {
+      label: "Transit",
+      href: zipEnabled
+        ? `https://www.google.com/maps/dir/?api=1&travelmode=transit&origin=${result.zip}`
+        : "#",
+      enabled: zipEnabled,
+    },
+    {
+      label: "Schools",
+      href: zipEnabled ? `https://www.greatschools.org/search/search.page?zip=${result.zip}` : "#",
+      enabled: zipEnabled,
+    },
+    {
+      label: "Rental Affordability",
+      href: "https://www.huduser.gov/portal/datasets/fmr.html",
+      enabled: true,
+    },
+    {
+      label: "Mental Health Resources",
+      href: zipEnabled ? `https://findtreatment.gov/?zip=${result.zip}&sType=MH` : "#",
+      enabled: zipEnabled,
+    },
+    {
+      label: "LGBT Resources",
+      href: stateInfo
+        ? `https://www.mapresearch.org/equality-maps/profile_state/${stateInfo.abbr}`
+        : "#",
+      enabled: Boolean(stateInfo),
+    },
+  ];
+
   return (
     <article className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm shadow-slate-200/60">
       <div className="flex items-start justify-between gap-4">
@@ -514,6 +563,46 @@ function ExplorerResultCard({ result, rank }) {
         <MiniDimensionBar label="Education" value={result.avg_education_score} />
         <MiniDimensionBar label="Affordability" value={result.avg_affordability_score} />
         <MiniDimensionBar label="LGBT Policy" value={result.avg_lgbt_score} />
+      </div>
+
+      <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50/80">
+        <button
+          type="button"
+          onClick={() => setResourcesOpen((open) => !open)}
+          className="flex w-full items-center justify-between px-4 py-4 text-left"
+        >
+          <span className="text-sm font-semibold text-slate-900">Resources</span>
+          <span className="text-sm font-medium text-slate-500">
+            {resourcesOpen ? "Hide" : "Show"}
+          </span>
+        </button>
+
+        {resourcesOpen ? (
+          <div className="border-t border-slate-200 px-4 py-4">
+            <div className="grid gap-3">
+              {resources.map((resource) => (
+                resource.enabled ? (
+                  <a
+                    key={resource.label}
+                    href={resource.href}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="rounded-2xl bg-white px-4 py-3 text-sm font-medium text-teal-700 transition hover:bg-teal-50 hover:text-teal-800"
+                  >
+                    {resource.label}
+                  </a>
+                ) : (
+                  <div
+                    key={resource.label}
+                    className="rounded-2xl bg-white px-4 py-3 text-sm font-medium text-slate-400"
+                  >
+                    {resource.label} unavailable without ZIP context
+                  </div>
+                )
+              ))}
+            </div>
+          </div>
+        ) : null}
       </div>
     </article>
   );
@@ -920,15 +1009,15 @@ export default function App() {
           <p className="text-sm leading-7 text-slate-500">
             QRoots is designed to help people make informed decisions about where to live and
             to support housing intervention efforts. Scores are advisory and reflect
-            neighborhood-level patterns, not individual circumstances. Data sources: Census
-            ACS 5-Year Estimates, Princeton Eviction Lab, CDC PLACES 2025, Walk Score, HUD
-            Fair Market Rent.
+            neighborhood-level patterns, not individual circumstances. Data sources: Census ACS 5-Year Estimates, Princeton Eviction Lab, CDC PLACES 2025, 
+            Walk Score, HUD Fair Market Rent, Movement Advancement Project (MAP).
           </p>
           <p className="mt-3 text-sm leading-7 text-slate-500">
             Eviction data reflects 2016 validated records. Walk Score data reflects city-level
             averages. QRoots composite score weighted: Housing Stability 40%, Walkability 20%,
-            Transit 15%, Education 15%, Affordability 10%. Model trained on XGBoost with
-            AUC-ROC 0.81.
+            Transit 15%, Education 15%, Affordability 10%. LGBT Policy score reflects
+            state-level policy tally from the Movement Advancement Project (MAP), normalized
+            to 0–100. Model trained on XGBoost with AUC-ROC 0.81.
           </p>
           <a
             href="https://github.com/timothytroyhollis-ctrl/QRoots"
