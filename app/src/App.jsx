@@ -837,11 +837,10 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(15,118,110,0.14),_transparent_38%),linear-gradient(180deg,_#f8fafc_0%,_#eef2ff_100%)] text-slate-900">
+    <div className="relative min-h-screen bg-[radial-gradient(ellipse_at_top,_rgba(20,83,45,0.6),transparent_55%),radial-gradient(ellipse_at_bottom_right,rgba(22,101,52,0.35),transparent_50%),linear-gradient(180deg,#d1fae5_0%,#a7f3d0_50%,#6ee7b7_100%)] text-slate-900">
       <div className="mx-auto max-w-6xl px-6 py-12 sm:px-8 lg:px-10">
         <header className="rounded-[2rem] border border-white/70 bg-white/80 px-8 py-10 shadow-xl shadow-slate-200/50 backdrop-blur">
-          <img src="/QRoots_logo.png" alt="QRoots logo" className="mx-auto h-40 w-auto sm:h-48" />
-          <p className="mt-4 text-center text-sm font-semibold uppercase tracking-[0.32em] text-teal-700">QRoots</p>
+          <img src="/QRoots_logo.png" alt="QRoots logo" className="mx-auto h-56 w-auto sm:h-64" />
           <h1 className="mt-4 text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl">
             Find Your Perfect Place to Grow.
           </h1>
@@ -1049,16 +1048,39 @@ export default function App() {
                   ))}
                 </div>
               ) : !loading ? (
-                <section className="rounded-[2rem] border border-dashed border-slate-300 bg-white/60 px-8 py-16 text-center">
-                  <img src="/QRoots_logo.png" alt="QRoots logo" className="mx-auto h-52 w-auto sm:h-64" />
-                  <h2 className="mt-6 text-3xl font-semibold tracking-tight text-slate-900">
-                    Find Your Perfect Place to Grow.
-                  </h2>
-                  <p className="mx-auto mt-4 max-w-2xl text-base leading-7 text-slate-600">
-                    QRoots helps you explore neighborhood quality, housing stability, and
-                    community context through tract-level scores, interactive maps, and
-                    explainable drivers behind each result.
-                  </p>
+                <section className="grid gap-5 lg:grid-cols-3">
+                  <article className="rounded-[2rem] border border-white/80 bg-white/85 p-6 shadow-lg shadow-slate-200/40 backdrop-blur">
+                    <div className="inline-flex rounded-full bg-teal-100 px-3 py-1 text-lg">
+                      🔍
+                    </div>
+                    <h2 className="mt-5 text-xl font-semibold text-slate-900">Search Any Neighborhood</h2>
+                    <p className="mt-3 text-base leading-7 text-slate-600">
+                      Enter a ZIP code or census tract GEOID to get an instant QRoots score,
+                      housing stability risk, AI summary, and interactive map.
+                    </p>
+                  </article>
+
+                  <article className="rounded-[2rem] border border-white/80 bg-white/85 p-6 shadow-lg shadow-slate-200/40 backdrop-blur">
+                    <div className="inline-flex rounded-full bg-indigo-100 px-3 py-1 text-lg">
+                      🧭
+                    </div>
+                    <h2 className="mt-5 text-xl font-semibold text-slate-900">Explore by What Matters</h2>
+                    <p className="mt-3 text-base leading-7 text-slate-600">
+                      Use Explore mode to rank every ZIP code in any state by six customizable
+                      dimensions including walkability, affordability, and LGBT policy.
+                    </p>
+                  </article>
+
+                  <article className="rounded-[2rem] border border-white/80 bg-white/85 p-6 shadow-lg shadow-slate-200/40 backdrop-blur">
+                    <div className="inline-flex rounded-full bg-emerald-100 px-3 py-1 text-lg">
+                      🤖
+                    </div>
+                    <h2 className="mt-5 text-xl font-semibold text-slate-900">AI-Powered Insights</h2>
+                    <p className="mt-3 text-base leading-7 text-slate-600">
+                      Every ZIP search generates a plain-language neighborhood summary powered
+                      by OpenAI, plus contextual resource links tailored to that location.
+                    </p>
+                  </article>
                 </section>
               ) : null}
             </>
