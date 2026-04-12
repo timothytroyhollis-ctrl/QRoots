@@ -1366,4 +1366,85 @@ gradient to deeper green values.
 - Clean earthy green gradient live at https://qroots.onrender.com
 - No watermark — gradient alone provides the nature/roots visual theme
 
+**Next:** Prompts 041-043 — Roots Watermark Attempts and Abandonment
+
+---
+
+## Prompts 041-043 — Roots Watermark Attempts and Abandonment
+**Date:** 2026-04-12
+**Purpose:** Multiple attempts to make the SVG roots watermark visible on the
+green gradient background.
+
+**Attempts Made:**
+- Prompt 041: Increased SVG opacity from 0.07 to 0.22 and deepened green gradient
+- Prompt 042: Repositioned all SVG paths to y=0-900 viewBox with xMidYMin slice
+  to fix off-screen rendering
+- Prompt 043: Replaced SVG watermark entirely with logo PNG as image watermark
+
+**Real-World Discoveries:**
+- opacity-[0.07] was too low to see against the green gradient regardless of path position
+- All SVG paths were positioned at y=900-1200 in a 1440x1200 viewBox — entirely off screen
+- preserveAspectRatio xMidYMid slice was clipping the visible area
+- Logo PNG has a fully opaque white background — renders as a white rectangle at low
+  opacity making it invisible against the green gradient
+- position fixed caused the watermark to render behind the page gradient entirely
+  rather than between gradient and content
+- After three prompt iterations the watermark approach was abandoned
+
+**Key Design Decisions:**
+- SVG watermark removed entirely
+- Earthy green gradient retained as the visual anchor for the roots theme
+- Logo in the header already conveys the roots brand — no additional watermark needed
+
+**Results:**
+- Clean earthy forest green gradient live at https://qroots.onrender.com
+- Background gradient: radial dark forest green at top fading to lighter emerald
+
+**Next:** Prompt 044 — Tree Roots Background + Neutral Blue Score Colors
+
+---
+
+## Prompt 044 — Tree Roots Background Redesign and Neutral Blue Score Colors
+**Date:** 2026-04-12
+**Purpose:** Two simultaneous changes — a final attempt at a roots watermark using
+a TreeRootsBackground component with brown earthy paths matching the logo style,
+and replacing the red/amber/green scoreTone palette with neutral blue to remove
+implied judgment from neighborhood scores.
+
+**Prompt:**
+Make two updates to app/src/App.jsx. First, update the TreeRootsBackground component
+SVG with a new design matching the QRoots logo style: thick central trunk at bottom
+center with 6-8 chunky root branches spreading wide left and right across the full
+page width, tapering from thick at center to thinner at tips. Use stroke colors
+#3F2A1E and #5C4033, stroke widths from 18px trunk down to 4px tips, strokeLinecap
+round, fill none, opacity-[0.18], position absolute, viewBox 0 0 1440 600. Second,
+replace scoreTone to return neutral blue colors: below 40 text-blue-600 bg-blue-400,
+40-60 text-blue-700 bg-blue-500, above 60 text-blue-800 bg-blue-600, all with
+from-blue-50 to-white panel and ring-blue-200.
+
+**Codex Output Summary:**
+Codex rebuilt the TreeRootsBackground SVG with brown earthy stroke colors, chunky
+trunk and branching root paths, and changed position from fixed to absolute.
+Updated scoreTone to return three shades of blue replacing red/amber/green.
+
+**Real-World Discoveries:**
+- Brown roots on green background still not visible after position absolute fix
+- Root paths rendered correctly in isolated SVG preview but disappeared behind
+  the white/80 backdrop-blur header card and white content cards
+- Cards cover the majority of the page leaving no background area to show roots
+- UX feedback confirmed red/amber/green implied neighborhood quality judgment
+  which is inappropriate for an advisory tool
+
+**Key Design Decisions:**
+- Roots watermark abandoned permanently — cards cover too much of the background
+- Neutral blue chosen for scoreTone — communicates information without implying
+  a neighborhood is good or bad
+- Blue palette uses three intensity levels to preserve visual differentiation
+  between score ranges without value judgment
+
+**Results:**
+- All dimension bars, score cards, and badges now render in neutral blue
+- Score cards no longer imply low scores mean bad neighborhoods
+- Background remains earthy green gradient
+
 **Next:** Final contest submission on Handshake before April 30, 2026

@@ -134,12 +134,12 @@ function formatScore(value) {
 function scoreTone(value) {
   const numericValue = Number(value) || 0;
   if (numericValue < 40) {
-    return { text: "text-red-700", fill: "bg-red-500", panel: "from-red-50 to-white", ring: "ring-red-200" };
+    return { text: "text-blue-600", fill: "bg-blue-400", panel: "from-blue-50 to-white", ring: "ring-blue-200" };
   }
   if (numericValue <= 60) {
-    return { text: "text-amber-700", fill: "bg-amber-400", panel: "from-amber-50 to-white", ring: "ring-amber-200" };
+    return { text: "text-blue-700", fill: "bg-blue-500", panel: "from-blue-50 to-white", ring: "ring-blue-200" };
   }
-  return { text: "text-emerald-700", fill: "bg-emerald-500", panel: "from-emerald-50 to-white", ring: "ring-emerald-200" };
+  return { text: "text-blue-800", fill: "bg-blue-600", panel: "from-blue-50 to-white", ring: "ring-blue-200" };
 }
 
 function formatShapValue(value) {
@@ -340,7 +340,123 @@ function NeighborhoodSummaryCard({ summary, loading }) {
   );
 }
 
-function QRootsSummaryCard({ overallScore, tract }) {
+function TreeRootsBackground() {
+  return (
+    <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden opacity-[0.18]" aria-hidden="true">
+      <svg
+        viewBox="0 0 1440 600"
+        className="h-full w-full"
+        preserveAspectRatio="xMidYMid slice"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <g fill="none" strokeLinecap="round" strokeLinejoin="round">
+          <path
+            d="M720 580 C718 556 716 530 714 504 C712 474 714 444 720 412 C726 444 728 474 726 504 C724 530 722 556 720 580"
+            stroke="#3F2A1E"
+            strokeWidth="18"
+          />
+          <path
+            d="M720 576 C680 544 642 512 602 486 C554 454 506 432 454 412"
+            stroke="#5C4033"
+            strokeWidth="16"
+          />
+          <path
+            d="M722 576 C768 544 812 512 856 486 C906 454 958 432 1014 410"
+            stroke="#3F2A1E"
+            strokeWidth="16"
+          />
+          <path
+            d="M714 576 C662 548 612 530 560 518 C488 500 416 496 338 492 C244 486 146 466 34 424"
+            stroke="#5C4033"
+            strokeWidth="14"
+          />
+          <path
+            d="M726 576 C786 548 844 530 904 518 C984 500 1064 496 1150 490 C1250 484 1346 464 1406 424"
+            stroke="#3F2A1E"
+            strokeWidth="14"
+          />
+          <path
+            d="M706 572 C648 548 592 538 534 536 C452 534 372 528 292 508 C202 486 112 450 10 378"
+            stroke="#3F2A1E"
+            strokeWidth="12"
+          />
+          <path
+            d="M734 572 C800 548 864 538 930 536 C1018 534 1106 528 1194 506 C1288 482 1364 446 1430 378"
+            stroke="#5C4033"
+            strokeWidth="12"
+          />
+          <path
+            d="M698 566 C632 530 572 500 512 462 C442 418 378 366 316 302 C258 242 210 192 162 150"
+            stroke="#3F2A1E"
+            strokeWidth="10"
+          />
+          <path
+            d="M742 566 C814 530 880 500 946 462 C1022 418 1092 366 1160 300 C1220 242 1270 192 1318 150"
+            stroke="#5C4033"
+            strokeWidth="10"
+          />
+          <path
+            d="M684 558 C620 532 562 520 504 510 C444 500 384 486 324 458 C248 422 170 370 86 296"
+            stroke="#5C4033"
+            strokeWidth="9"
+          />
+          <path
+            d="M756 558 C826 532 890 520 954 510 C1020 500 1086 484 1152 454 C1232 418 1304 368 1380 294"
+            stroke="#3F2A1E"
+            strokeWidth="9"
+          />
+          <path
+            d="M666 546 C602 526 546 518 492 510 C426 500 362 490 300 468"
+            stroke="#3F2A1E"
+            strokeWidth="7"
+          />
+          <path
+            d="M776 546 C846 526 910 518 972 510 C1042 500 1110 488 1178 464"
+            stroke="#5C4033"
+            strokeWidth="7"
+          />
+          <path
+            d="M640 530 C586 508 534 486 480 452 C426 418 378 376 328 324"
+            stroke="#5C4033"
+            strokeWidth="6"
+          />
+          <path
+            d="M804 530 C864 508 920 486 978 450 C1036 416 1088 374 1142 320"
+            stroke="#3F2A1E"
+            strokeWidth="6"
+          />
+          <path
+            d="M602 516 C548 494 500 474 452 446"
+            stroke="#3F2A1E"
+            strokeWidth="5"
+          />
+          <path
+            d="M844 516 C904 494 958 472 1012 442"
+            stroke="#5C4033"
+            strokeWidth="5"
+          />
+          <path
+            d="M570 500 C518 480 472 456 424 424"
+            stroke="#5C4033"
+            strokeWidth="4"
+          />
+          <path
+            d="M878 500 C934 480 986 456 1040 422"
+            stroke="#3F2A1E"
+            strokeWidth="4"
+          />
+          <path
+            d="M718 560 C716 530 716 500 720 468"
+            stroke="#5C4033"
+            strokeWidth="8"
+          />
+        </g>
+      </svg>
+    </div>
+  );
+}
+
+function QRootsSummaryCard({ overallScore, tract, summary, summaryLoading }) {
   const [copied, setCopied] = useState(false);
   const tone = scoreTone(overallScore);
   const dimensionKeys = ["housing_stability_score", "walk_score", "transit_score", "education_score", "affordability_score"];
@@ -381,7 +497,10 @@ function QRootsSummaryCard({ overallScore, tract }) {
             <span className="pb-1 text-base font-medium text-slate-500">/ 100</span>
           </div>
           <p className="mt-3 text-sm leading-6 text-slate-600">
-            A composite neighborhood score balancing housing stability, walkability, transit access, educational attainment, and affordability.
+            {summaryLoading
+              ? "Generating a plain-language summary for this ZIP code..."
+              : summary ||
+                "A composite neighborhood score balancing housing stability, walkability, transit access, educational attainment, and affordability."}
           </p>
         </div>
         <div className="grid flex-1 gap-4">
@@ -838,6 +957,7 @@ export default function App() {
 
   return (
     <div className="relative min-h-screen bg-[radial-gradient(ellipse_at_top,_rgba(20,83,45,0.6),transparent_55%),radial-gradient(ellipse_at_bottom_right,rgba(22,101,52,0.35),transparent_50%),linear-gradient(180deg,#d1fae5_0%,#a7f3d0_50%,#6ee7b7_100%)] text-slate-900">
+      <TreeRootsBackground />
       <div className="mx-auto max-w-6xl px-6 py-12 sm:px-8 lg:px-10">
         <header className="rounded-[2rem] border border-white/70 bg-white/80 px-8 py-10 shadow-xl shadow-slate-200/50 backdrop-blur">
           <img src="/QRoots_logo.png" alt="QRoots logo" className="mx-auto h-56 w-auto sm:h-64" />
@@ -1025,11 +1145,9 @@ export default function App() {
                 <QRootsSummaryCard
                   overallScore={searchMode === "zip" ? zipQRootsScore : results[0]?.qroots_score}
                   tract={results[0]}
+                  summary={searchMode === "zip" ? zipSummary : ""}
+                  summaryLoading={searchMode === "zip" ? summaryLoading : false}
                 />
-              ) : null}
-
-              {searchMode === "zip" && results.length > 0 ? (
-                <NeighborhoodSummaryCard summary={zipSummary} loading={summaryLoading} />
               ) : null}
 
               {searchMode === "zip" && results.length > 0 ? (
