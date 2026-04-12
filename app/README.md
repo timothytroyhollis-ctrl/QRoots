@@ -22,6 +22,8 @@ QRoots is a neighborhood quality-of-life and housing stability platform designed
   - affordability
   - mental health
   - LGBT resources
+- Shareable URLs — every ZIP and GEOID search updates the browser URL so results can be shared directly with a link
+- Copy Link button on every result for one-click sharing
 
 ## Data Sources
 
@@ -57,7 +59,7 @@ QRoots is a neighborhood quality-of-life and housing stability platform designed
 2. An XGBoost model estimates tract-level housing stability risk using eviction, rent burden, housing, economic, and health indicators.
 3. SHAP explanations identify the top 3 factors driving each tract’s risk prediction.
 4. A QRoots composite score is calculated on a 0-100 scale across five core dimensions: Housing Stability, Walkability, Transit, Education, and Affordability.
-5. ZIP-level search aggregates tract-level scores and generates a plain-language neighborhood summary.
+5. ZIP-level search aggregates tract-level scores, generates a plain-language AI neighborhood summary, and updates the browser URL for easy sharing.
 6. The Explore tab lets users rank ZIP codes within a selected state by customizing six dimension weights and minimum thresholds.
 7. Result cards provide additional context through expandable neighborhood resource links tailored to each ZIP and state.
 
