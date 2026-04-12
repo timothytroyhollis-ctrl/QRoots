@@ -558,6 +558,13 @@ function ResultCard({ tract, zip }) {
       href: `https://www.mapresearch.org/equality-maps/profile_state/${stateInfo?.abbr ?? ""}`,
       enabled: Boolean(stateInfo),
     },
+    {
+      label: "🏳️‍🌈 LGBT Community Centers",
+      href: tractZip
+        ? `https://www.lgbtcenters.org/LGBTCenters?search=${tractZip}`
+        : "https://www.lgbtcenters.org/LGBTCenters",
+      enabled: true,
+    },
   ];
 
   return (
@@ -684,6 +691,13 @@ function ExplorerResultCard({ result, rank, onViewFullReport }) {
         ? `https://www.mapresearch.org/equality-maps/profile_state/${stateInfo.abbr}`
         : "#",
       enabled: Boolean(stateInfo),
+    },
+    {
+      label: "🏳️‍🌈 LGBT Community Centers",
+      href: result.zip
+        ? `https://www.lgbtcenters.org/LGBTCenters?search=${result.zip}`
+        : "https://www.lgbtcenters.org/LGBTCenters",
+      enabled: true,
     },
   ];
 
