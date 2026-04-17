@@ -7,10 +7,17 @@ const API_BASE_URL = "https://rootscore-api.onrender.com";
 const TIGER_TRACTS_URL = "https://rootscore-api.onrender.com/tracts/geojson";
 
 const badgeClasses = {
-  low: "bg-emerald-100 text-emerald-800 ring-emerald-200",
-  medium: "bg-amber-100 text-amber-800 ring-amber-200",
-  high: "bg-orange-100 text-orange-800 ring-orange-200",
-  critical: "bg-red-100 text-red-800 ring-red-200",
+  low: "bg-emerald-900/80 text-emerald-200 ring-emerald-700",
+  medium: "bg-amber-900/80 text-amber-200 ring-amber-700",
+  high: "bg-orange-900/80 text-orange-200 ring-orange-700",
+  critical: "bg-red-900/80 text-red-200 ring-red-700",
+};
+
+const badgeStyles = {
+  low: { backgroundColor: "rgba(6, 78, 59, 0.88)", color: "#a7f3d0", borderColor: "#047857" },
+  medium: { backgroundColor: "rgba(120, 53, 15, 0.88)", color: "#fde68a", borderColor: "#b45309" },
+  high: { backgroundColor: "rgba(124, 45, 18, 0.88)", color: "#fdba74", borderColor: "#c2410c" },
+  critical: { backgroundColor: "rgba(127, 29, 29, 0.88)", color: "#fca5a5", borderColor: "#b91c1c" },
 };
 
 const mapFillColors = {
@@ -134,12 +141,12 @@ function formatScore(value) {
 function scoreTone(value) {
   const numericValue = Number(value) || 0;
   if (numericValue < 40) {
-    return { text: "text-blue-600", fill: "bg-blue-400", panel: "from-blue-50 to-white", ring: "ring-blue-200" };
+    return { text: "text-white", fill: "bg-blue-400", panel: "from-blue-50 to-white", ring: "ring-blue-200" };
   }
   if (numericValue <= 60) {
-    return { text: "text-blue-700", fill: "bg-blue-500", panel: "from-blue-50 to-white", ring: "ring-blue-200" };
+    return { text: "text-white", fill: "bg-blue-500", panel: "from-blue-50 to-white", ring: "ring-blue-200" };
   }
-  return { text: "text-blue-800", fill: "bg-blue-600", panel: "from-blue-50 to-white", ring: "ring-blue-200" };
+  return { text: "text-white", fill: "bg-blue-600", panel: "from-blue-50 to-white", ring: "ring-blue-200" };
 }
 
 function formatShapValue(value) {
@@ -223,8 +230,8 @@ function MapBounds({ geoJson }) {
 function ZipResultsMap({ tracts, tractGeoJson, mapError, mapLoading }) {
   if (mapLoading) {
     return (
-      <section className="mt-6 rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm shadow-slate-200/50">
-        <p className="text-sm text-slate-600">Loading tract boundaries for this ZIP code...</p>
+      <section className="mt-6 rounded-[2rem] border border-white/30 bg-black/40 p-6 shadow-sm shadow-slate-200/50 backdrop-blur-lg">
+        <p className="text-sm font-semibold text-white">Loading tract boundaries for this ZIP code...</p>
       </section>
     );
   }
@@ -262,10 +269,10 @@ function ZipResultsMap({ tracts, tractGeoJson, mapError, mapLoading }) {
   };
 
   return (
-    <section className="mt-6 rounded-[2rem] border border-slate-200 bg-white p-4 shadow-sm shadow-slate-200/50">
+    <section className="mt-6 rounded-[2rem] border border-white/30 bg-black/40 p-4 shadow-sm shadow-slate-200/50 backdrop-blur-lg">
       <div className="mb-4 px-2 pt-2">
-        <h2 className="text-lg font-semibold text-slate-900">ZIP-level tract map</h2>
-        <p className="mt-1 text-sm text-slate-600">
+        <h2 className="text-white text-lg font-semibold">ZIP-level tract map</h2>
+        <p className="mt-1 text-white font-semibold text-sm">
           Census tract boundaries are shaded by housing stability tier. Click a tract to see details.
         </p>
       </div>
@@ -291,7 +298,7 @@ function DimensionBar({ label, value }) {
     <div>
       <div className="mb-2 flex items-center justify-between">
         <div className="group relative inline-flex items-center">
-          <p className="cursor-help text-sm font-medium text-slate-700 underline decoration-dotted underline-offset-4">
+          <p className="cursor-help text-sm font-semibold text-white underline decoration-dotted underline-offset-4">
             {label}
           </p>
           <div className="pointer-events-none absolute left-0 top-full z-20 mt-2 hidden w-72 rounded-2xl bg-slate-950 px-4 py-3 text-xs leading-5 text-white shadow-xl group-hover:block">
@@ -313,7 +320,7 @@ function MiniDimensionBar({ label, value }) {
   return (
     <div>
       <div className="mb-1 flex items-center justify-between">
-        <p className="text-xs font-medium text-slate-600">{label}</p>
+        <p className="text-xs font-semibold text-white">{label}</p>
         <p className={`text-xs font-semibold ${tone.text}`}>{formatScore(safeValue)}</p>
       </div>
       <div className="h-2 overflow-hidden rounded-full bg-slate-100">
@@ -325,134 +332,18 @@ function MiniDimensionBar({ label, value }) {
 
 function NeighborhoodSummaryCard({ summary, loading }) {
   return (
-    <section className="mb-6 rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm shadow-slate-200/50">
-      <p className="text-sm font-semibold uppercase tracking-[0.28em] text-slate-500">
+    <section className="mb-6 rounded-[2rem] border border-white/30 bg-black/40 p-6 shadow-sm shadow-slate-200/50 backdrop-blur-lg">
+      <p className="text-white text-sm font-semibold uppercase tracking-[0.28em]">
         AI Neighborhood Summary
       </p>
       {loading ? (
-        <p className="mt-4 text-sm leading-7 text-slate-600">
+        <p className="mt-4 text-white font-semibold text-base leading-8">
           Generating a plain-language summary for this ZIP code...
         </p>
       ) : (
-        <p className="mt-4 text-base leading-8 text-slate-700">{summary}</p>
+        <p className="mt-4 text-white font-semibold text-base leading-8">{summary}</p>
       )}
     </section>
-  );
-}
-
-function TreeRootsBackground() {
-  return (
-    <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden opacity-[0.18]" aria-hidden="true">
-      <svg
-        viewBox="0 0 1440 600"
-        className="h-full w-full"
-        preserveAspectRatio="xMidYMid slice"
-        xmlns="http://www.w3.org/2000/svg"
-      >
-        <g fill="none" strokeLinecap="round" strokeLinejoin="round">
-          <path
-            d="M720 580 C718 556 716 530 714 504 C712 474 714 444 720 412 C726 444 728 474 726 504 C724 530 722 556 720 580"
-            stroke="#3F2A1E"
-            strokeWidth="18"
-          />
-          <path
-            d="M720 576 C680 544 642 512 602 486 C554 454 506 432 454 412"
-            stroke="#5C4033"
-            strokeWidth="16"
-          />
-          <path
-            d="M722 576 C768 544 812 512 856 486 C906 454 958 432 1014 410"
-            stroke="#3F2A1E"
-            strokeWidth="16"
-          />
-          <path
-            d="M714 576 C662 548 612 530 560 518 C488 500 416 496 338 492 C244 486 146 466 34 424"
-            stroke="#5C4033"
-            strokeWidth="14"
-          />
-          <path
-            d="M726 576 C786 548 844 530 904 518 C984 500 1064 496 1150 490 C1250 484 1346 464 1406 424"
-            stroke="#3F2A1E"
-            strokeWidth="14"
-          />
-          <path
-            d="M706 572 C648 548 592 538 534 536 C452 534 372 528 292 508 C202 486 112 450 10 378"
-            stroke="#3F2A1E"
-            strokeWidth="12"
-          />
-          <path
-            d="M734 572 C800 548 864 538 930 536 C1018 534 1106 528 1194 506 C1288 482 1364 446 1430 378"
-            stroke="#5C4033"
-            strokeWidth="12"
-          />
-          <path
-            d="M698 566 C632 530 572 500 512 462 C442 418 378 366 316 302 C258 242 210 192 162 150"
-            stroke="#3F2A1E"
-            strokeWidth="10"
-          />
-          <path
-            d="M742 566 C814 530 880 500 946 462 C1022 418 1092 366 1160 300 C1220 242 1270 192 1318 150"
-            stroke="#5C4033"
-            strokeWidth="10"
-          />
-          <path
-            d="M684 558 C620 532 562 520 504 510 C444 500 384 486 324 458 C248 422 170 370 86 296"
-            stroke="#5C4033"
-            strokeWidth="9"
-          />
-          <path
-            d="M756 558 C826 532 890 520 954 510 C1020 500 1086 484 1152 454 C1232 418 1304 368 1380 294"
-            stroke="#3F2A1E"
-            strokeWidth="9"
-          />
-          <path
-            d="M666 546 C602 526 546 518 492 510 C426 500 362 490 300 468"
-            stroke="#3F2A1E"
-            strokeWidth="7"
-          />
-          <path
-            d="M776 546 C846 526 910 518 972 510 C1042 500 1110 488 1178 464"
-            stroke="#5C4033"
-            strokeWidth="7"
-          />
-          <path
-            d="M640 530 C586 508 534 486 480 452 C426 418 378 376 328 324"
-            stroke="#5C4033"
-            strokeWidth="6"
-          />
-          <path
-            d="M804 530 C864 508 920 486 978 450 C1036 416 1088 374 1142 320"
-            stroke="#3F2A1E"
-            strokeWidth="6"
-          />
-          <path
-            d="M602 516 C548 494 500 474 452 446"
-            stroke="#3F2A1E"
-            strokeWidth="5"
-          />
-          <path
-            d="M844 516 C904 494 958 472 1012 442"
-            stroke="#5C4033"
-            strokeWidth="5"
-          />
-          <path
-            d="M570 500 C518 480 472 456 424 424"
-            stroke="#5C4033"
-            strokeWidth="4"
-          />
-          <path
-            d="M878 500 C934 480 986 456 1040 422"
-            stroke="#3F2A1E"
-            strokeWidth="4"
-          />
-          <path
-            d="M718 560 C716 530 716 500 720 468"
-            stroke="#5C4033"
-            strokeWidth="8"
-          />
-        </g>
-      </svg>
-    </div>
   );
 }
 
@@ -472,15 +363,15 @@ function QRootsSummaryCard({ overallScore, tract, summary, summaryLoading }) {
   }
 
   return (
-    <section className={`mb-6 rounded-[2rem] border bg-gradient-to-br ${tone.panel} p-6 shadow-sm shadow-slate-200/50 ring-1 ${tone.ring}`}>
+    <section className="mb-6 rounded-[2rem] border border-white/30 bg-black/40 p-6 shadow-sm shadow-slate-200/50 backdrop-blur-lg">
       <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
         <div>
           <div className="flex items-center gap-3">
-            <p className="text-sm font-semibold uppercase tracking-[0.28em] text-slate-500">QRoots Score</p>
+            <p className="text-sm font-semibold uppercase tracking-[0.28em] text-white">QRoots Score</p>
             <button
               type="button"
               onClick={handleCopyLink}
-              className="rounded-full border border-slate-200 bg-white/80 px-3 py-1 text-xs font-semibold text-slate-700 transition hover:bg-white"
+              className="rounded-full border border-amber-500/60 bg-amber-600 px-3 py-1 text-xs font-semibold text-white transition hover:bg-amber-500"
             >
               Copy Link
             </button>
@@ -494,9 +385,9 @@ function QRootsSummaryCard({ overallScore, tract, summary, summaryLoading }) {
           </div>
           <div className="mt-3 flex items-end gap-3">
             <span className={`text-5xl font-bold tracking-tight ${tone.text}`}>{formatScore(overallScore)}</span>
-            <span className="pb-1 text-base font-medium text-slate-500">/ 100</span>
+            <span className="pb-1 text-base font-semibold text-white">/ 100</span>
           </div>
-          <p className="mt-3 text-sm leading-6 text-slate-600">
+          <p className="mt-3 text-sm leading-6 font-semibold text-white">
             {summaryLoading
               ? "Generating a plain-language summary for this ZIP code..."
               : summary ||
@@ -534,7 +425,7 @@ function ResultCard({ tract, zip }) {
     {
       label: "🚌 Transit",
       href: zipEnabled
-        ? `https://www.google.com/maps/dir/?api=1&travelmode=transit&origin=${tractZip}`
+        ? `https://www.google.com/maps/dir/?api=1&travelmode=transit&origin=${tractZip}+USA`
         : "#",
       enabled: zipEnabled,
     },
@@ -566,33 +457,39 @@ function ResultCard({ tract, zip }) {
   ];
 
   return (
-    <article className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm shadow-slate-200/60">
+    <article className="rounded-3xl border border-white/30 bg-black/40 p-6 shadow-sm shadow-slate-200/60 backdrop-blur-lg">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Census Tract</p>
-          {zip ? <p className="mt-1 text-xs text-slate-400">ZIP {zip}</p> : null}
-          <h2 className="mt-2 text-2xl font-semibold text-slate-900">{tract.GEOID}</h2>
+          <p className="text-white text-xs font-semibold uppercase tracking-[0.24em]">Census Tract</p>
+          {zip ? <p className="mt-1 text-xs font-semibold text-white">ZIP {zip}</p> : null}
+          <h2 className="text-white text-2xl font-semibold mt-2">{tract.GEOID}</h2>
         </div>
         <div className="flex flex-col items-start gap-3 sm:items-end">
-          <span className={`inline-flex rounded-full px-3 py-1 text-sm font-semibold capitalize ring-1 ${badgeClasses[tract.risk_tier] ?? badgeClasses.low}`}>
+          <span
+            className="inline-flex rounded-full border px-3 py-1 text-sm font-semibold capitalize"
+            style={badgeStyles[tract.risk_tier] ?? badgeStyles.low}
+          >
             {tract.risk_tier}
           </span>
           <div className="text-left sm:text-right">
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Housing Stability Risk</p>
-            <p className="mt-1 text-3xl font-bold text-slate-900">{formatPercent(tract.predicted_risk_score)}</p>
+            <p className="text-white text-xs font-semibold uppercase tracking-[0.24em]">Housing Stability Risk</p>
+            <p className="mt-1 text-3xl font-bold text-white">{formatPercent(tract.predicted_risk_score)}</p>
           </div>
         </div>
       </div>
       <div className="mt-6">
-        <p className="text-sm font-semibold text-slate-900">Top driving factors</p>
+        <p className="text-white text-sm font-semibold">Top driving factors</p>
         <ul className="mt-3 space-y-3">
           {tract.top_driving_factors?.map((factor) => {
             const shap = formatShapValue(factor.shap_value ?? 0);
             return (
-              <li key={`${tract.GEOID}-${factor.feature}`} className="flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3">
+              <li
+                key={`${tract.GEOID}-${factor.feature}`}
+                className="flex items-center justify-between rounded-2xl border border-white/20 bg-black/30 px-4 py-3"
+              >
                 <div>
-                  <p className="font-medium text-slate-900">{factor.label}</p>
-                  <p className="text-sm text-slate-500">
+                  <p className="text-white font-medium">{factor.label}</p>
+                  <p className="text-white font-semibold text-sm">
                     {Number(factor.shap_value) >= 0 ? "Associated with higher risk" : "Associated with lower risk"}
                   </p>
                 </div>
@@ -603,14 +500,14 @@ function ResultCard({ tract, zip }) {
         </ul>
       </div>
 
-      <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50/80">
+      <div className="mt-6 rounded-2xl border border-white/30 bg-black/30">
         <button
           type="button"
           onClick={() => setResourcesOpen((open) => !open)}
           className="flex w-full items-center justify-between px-4 py-4 text-left"
         >
-          <span className="text-sm font-semibold text-slate-900">Resources</span>
-          <span className="text-sm font-medium text-slate-500">
+          <span className="text-white text-sm font-semibold">Resources</span>
+          <span className="text-sm font-semibold text-white">
             {resourcesOpen ? "Hide" : "Show"}
           </span>
         </button>
@@ -625,14 +522,14 @@ function ResultCard({ tract, zip }) {
                     href={resource.href}
                     target="_blank"
                     rel="noreferrer"
-                    className="rounded-2xl bg-white px-4 py-3 text-sm font-medium text-teal-700 transition hover:bg-teal-50 hover:text-teal-800"
+                    className="rounded-2xl border border-white/20 bg-black/30 px-4 py-3 text-sm font-medium text-amber-400 transition hover:bg-black/40 hover:text-amber-300"
                   >
                     {resource.label}
                   </a>
                 ) : (
                   <div
                     key={resource.label}
-                    className="rounded-2xl bg-white px-4 py-3 text-sm font-medium text-slate-400"
+                    className="rounded-2xl bg-black/30 px-4 py-3 text-sm font-medium text-white"
                   >
                     {resource.label} unavailable without ZIP context
                   </div>
@@ -664,7 +561,7 @@ function ExplorerResultCard({ result, rank, onViewFullReport }) {
     {
       label: "🚌 Transit",
       href: zipEnabled
-        ? `https://www.google.com/maps/dir/?api=1&travelmode=transit&origin=${result.zip}`
+        ? `https://www.google.com/maps/dir/?api=1&travelmode=transit&origin=${result.zip}+USA`
         : "#",
       enabled: zipEnabled,
     },
@@ -698,19 +595,19 @@ function ExplorerResultCard({ result, rank, onViewFullReport }) {
   ];
 
   return (
-    <article className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm shadow-slate-200/60">
+    <article className="rounded-3xl border border-white/30 bg-black/40 p-6 shadow-sm shadow-slate-200/60 backdrop-blur-lg">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Rank #{rank}</p>
-          <h2 className="mt-2 text-3xl font-semibold text-slate-900">{result.zip}, {result.state_abbr}</h2>
+          <p className="text-white text-xs font-semibold uppercase tracking-[0.24em]">Rank #{rank}</p>
+          <h2 className="text-white text-3xl font-semibold mt-2">{result.zip}, {result.state_abbr}</h2>
         </div>
         <div className="text-right">
-          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Custom Score</p>
+          <p className="text-white text-xs font-semibold uppercase tracking-[0.24em]">Custom Score</p>
           <p className={`mt-2 text-3xl font-bold ${scoreTone(result.custom_score).text}`}>{formatScore(result.custom_score)}</p>
         </div>
       </div>
-      <div className="mt-5 rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-600">
-        <span className="font-medium text-slate-900">{result.tract_count}</span> tract(s) analyzed
+      <div className="mt-5 rounded-2xl bg-black/30 px-4 py-3 text-white font-semibold text-sm">
+        <span className="font-semibold text-white">{result.tract_count}</span> tract(s) analyzed
       </div>
       <div className="mt-5 grid gap-3">
         <MiniDimensionBar label="QRoots" value={result.avg_qroots_score} />
@@ -722,14 +619,14 @@ function ExplorerResultCard({ result, rank, onViewFullReport }) {
         <MiniDimensionBar label="LGBT Policy" value={result.avg_lgbt_score} />
       </div>
 
-      <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50/80">
+      <div className="mt-6 rounded-2xl border border-white/30 bg-black/30">
         <button
           type="button"
           onClick={() => setResourcesOpen((open) => !open)}
           className="flex w-full items-center justify-between px-4 py-4 text-left"
         >
-          <span className="text-sm font-semibold text-slate-900">Resources</span>
-          <span className="text-sm font-medium text-slate-500">
+          <span className="text-white text-sm font-semibold">Resources</span>
+          <span className="text-sm font-semibold text-white">
             {resourcesOpen ? "Hide" : "Show"}
           </span>
         </button>
@@ -744,14 +641,14 @@ function ExplorerResultCard({ result, rank, onViewFullReport }) {
                     href={resource.href}
                     target="_blank"
                     rel="noreferrer"
-                    className="rounded-2xl bg-white px-4 py-3 text-sm font-medium text-teal-700 transition hover:bg-teal-50 hover:text-teal-800"
+                    className="rounded-2xl border border-white/20 bg-black/30 px-4 py-3 text-sm font-medium text-amber-400 transition hover:bg-black/40 hover:text-amber-300"
                   >
                     {resource.label}
                   </a>
                 ) : (
                   <div
                     key={resource.label}
-                    className="rounded-2xl bg-white px-4 py-3 text-sm font-medium text-slate-400"
+                    className="rounded-2xl bg-black/30 px-4 py-3 text-sm font-medium text-white"
                   >
                     {resource.label} unavailable without ZIP context
                   </div>
@@ -764,7 +661,7 @@ function ExplorerResultCard({ result, rank, onViewFullReport }) {
       <button
         type="button"
         onClick={() => onViewFullReport?.(result.zip)}
-        className="mt-6 h-11 w-full rounded-2xl bg-slate-950 text-sm font-semibold text-white transition hover:bg-slate-800"
+        className="mt-6 h-11 w-full rounded-2xl bg-amber-600 text-sm font-semibold text-white transition hover:bg-amber-500"
       >
         View Full Report
       </button>
@@ -992,19 +889,31 @@ export default function App() {
   }
 
   return (
-    <div className="relative min-h-screen bg-[radial-gradient(ellipse_at_top,_rgba(20,83,45,0.6),transparent_55%),radial-gradient(ellipse_at_bottom_right,rgba(22,101,52,0.35),transparent_50%),linear-gradient(180deg,#d1fae5_0%,#a7f3d0_50%,#6ee7b7_100%)] text-slate-900">
-      <TreeRootsBackground />
-      <div className="mx-auto max-w-6xl px-6 py-12 sm:px-8 lg:px-10">
-        <header className="rounded-[2rem] border border-white/70 bg-white/80 px-8 py-10 shadow-xl shadow-slate-200/50 backdrop-blur">
-          <img src="/QRoots_logo.png" alt="QRoots logo" className="mx-auto h-56 w-auto sm:h-64" />
-          <h1 className="mt-4 text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl">
-            Find Your Perfect Place to Grow.
-          </h1>
-          <p className="mt-4 max-w-2xl text-base leading-7 text-slate-600">
+    <div
+      className="relative min-h-screen bg-gradient-to-b from-slate-900 via-indigo-950 to-purple-950 text-slate-100"
+      style={{
+        backgroundImage: "url('/tree-bg.jpg')",
+        backgroundPosition: "center bottom",
+        backgroundRepeat: "no-repeat",
+        backgroundSize: "cover",
+        backgroundAttachment: "fixed",
+      }}
+    >
+      <div className="relative z-20 mx-auto max-w-6xl px-6 py-12 sm:px-8 lg:px-10">
+        <header className="rounded-[2rem] border border-white/70 bg-black/40 px-8 py-10 shadow-xl shadow-slate-200/50 backdrop-blur-lg">
+          <div className="text-center">
+            <div className="bg-black/40 rounded-3xl p-4 inline-block mx-auto">
+              <img src="/QRoots_logo.png" alt="QRoots logo" className="mx-auto h-56 w-auto sm:h-64" />
+            </div>
+            <h1 className="mt-4 text-4xl font-semibold tracking-tight text-white sm:text-5xl">
+              Find Your Perfect Place to Grow.
+            </h1>
+          <p className="mx-auto mt-4 max-w-2xl text-base leading-7 font-semibold text-white">
   Search by ZIP code or census tract to surface neighborhood quality scores, or
   use Explore mode to discover top neighborhoods in any state by what matters
   most to you.
 </p>
+          </div>
 
           <form onSubmit={handleSearch} className="mt-8 flex flex-col gap-4 lg:flex-row">
             <input
@@ -1017,15 +926,15 @@ export default function App() {
             <button
               type="submit"
               disabled={loading}
-              className="inline-flex h-14 items-center justify-center rounded-2xl bg-slate-950 px-6 text-base font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-400"
+              className="inline-flex h-14 items-center justify-center rounded-2xl bg-amber-600 px-6 text-base font-semibold text-white transition hover:bg-amber-500 disabled:cursor-not-allowed disabled:bg-slate-400"
             >
               {loading ? "Searching..." : "Search QRoots"}
             </button>
           </form>
 
-          <p className="mt-3 text-sm text-slate-500">
-            Examples: <span className="font-medium text-slate-700">17031010100</span> or{" "}
-            <span className="font-medium text-slate-700">78229</span>
+          <p className="mt-3 text-sm font-semibold text-white">
+            Examples: <span className="font-semibold text-white">17031010100</span> or{" "}
+            <span className="font-semibold text-white">78229</span>
           </p>
 
           <div className="mt-6 inline-flex rounded-2xl border border-slate-200 bg-slate-100 p-1">
@@ -1033,7 +942,7 @@ export default function App() {
               type="button"
               onClick={() => setActiveTab("search")}
               className={`rounded-xl px-5 py-2 text-sm font-semibold transition ${
-                activeTab === "search" ? "bg-white text-slate-900 shadow-sm" : "text-slate-600 hover:bg-white/60"
+                activeTab === "search" ? "bg-white text-slate-900 shadow-sm" : "text-gray-300 hover:bg-white/20"
               }`}
             >
               Search
@@ -1042,7 +951,7 @@ export default function App() {
               type="button"
               onClick={() => setActiveTab("explore")}
               className={`rounded-xl px-5 py-2 text-sm font-semibold transition ${
-                activeTab === "explore" ? "bg-white text-slate-900 shadow-sm" : "text-slate-600 hover:bg-white/60"
+                activeTab === "explore" ? "bg-white text-slate-900 shadow-sm" : "text-gray-300 hover:bg-white/20"
               }`}
             >
               Explore
@@ -1053,11 +962,11 @@ export default function App() {
         <main className="mt-8">
           {activeTab === "explore" ? (
             <>
-              <section className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm shadow-slate-200/50">
+              <section className="rounded-[2rem] border border-white/30 bg-black/40 p-6 shadow-sm shadow-slate-200/50 backdrop-blur-lg">
                 <form onSubmit={handleExplore} className="grid gap-6">
                   <div className="grid gap-5 lg:grid-cols-3">
                     <label className="grid gap-2">
-                      <span className="text-sm font-semibold text-slate-700">State</span>
+                      <span className="text-sm font-semibold text-white">State</span>
                       <select
                         value={exploreState}
                         onChange={(event) => setExploreState(event.target.value)}
@@ -1069,7 +978,7 @@ export default function App() {
                       </select>
                     </label>
                     <label className="grid gap-2">
-                      <span className="text-sm font-semibold text-slate-700">Top Results</span>
+                      <span className="text-sm font-semibold text-white">Top Results</span>
                       <select
                         value={exploreLimit}
                         onChange={(event) => setExploreLimit(Number(event.target.value))}
@@ -1084,16 +993,16 @@ export default function App() {
 
                   <div className="grid gap-4">
                     <div className="flex items-center justify-between">
-                      <p className="text-sm font-semibold text-slate-900">Dimension Weights</p>
-                      <p className="text-sm text-slate-500">
+                      <p className="text-sm font-semibold text-white">Dimension Weights</p>
+                      <p className="text-sm font-semibold text-white">
                         Total: {Object.values(exploreWeights).reduce((sum, value) => sum + value, 0)}%
                       </p>
                     </div>
                     {weightConfig.map((item) => (
                       <div key={item.key} className="grid gap-2">
                         <div className="flex items-center justify-between">
-                          <label className="text-sm font-medium text-slate-700">{item.label}</label>
-                          <span className="text-sm font-semibold text-slate-900">{exploreWeights[item.key]}%</span>
+                          <label className="text-sm font-medium text-white">{item.label}</label>
+                          <span className="text-sm font-semibold text-white">{exploreWeights[item.key]}%</span>
                         </div>
                         <input
                           type="range"
@@ -1107,10 +1016,10 @@ export default function App() {
                     ))}
                   </div>
 
-                  <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+                  <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-6">
                     {weightConfig.map((item) => (
                       <label key={item.key} className="grid gap-2">
-                        <span className="text-sm font-semibold text-slate-700">Min {item.label}</span>
+                        <span className="text-sm font-semibold text-white">Min {item.label}</span>
                         <input
                           type="number"
                           min="0"
@@ -1127,7 +1036,7 @@ export default function App() {
                     <button
                       type="submit"
                       disabled={exploreLoading}
-                      className="inline-flex h-14 items-center justify-center rounded-2xl bg-slate-950 px-6 text-base font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-400"
+                      className="inline-flex h-14 items-center justify-center rounded-2xl bg-amber-600 px-6 text-base font-semibold text-white transition hover:bg-amber-500 disabled:cursor-not-allowed disabled:bg-slate-400"
                     >
                       {exploreLoading ? "Finding..." : "Find My Neighborhood"}
                     </button>
@@ -1147,7 +1056,7 @@ export default function App() {
                     <button
                       type="button"
                       onClick={handleCopyExploreLink}
-                      className="rounded-full border border-slate-200 bg-white/80 px-3 py-1 text-xs font-semibold text-slate-700 transition hover:bg-white"
+                      className="rounded-full border border-amber-500/60 bg-amber-600 px-3 py-1 text-xs font-semibold text-white transition hover:bg-amber-500"
                     >
                       Copy Link
                     </button>
@@ -1171,12 +1080,12 @@ export default function App() {
                   </div>
                 </>
               ) : !exploreLoading ? (
-                <section className="mt-6 rounded-[2rem] border border-dashed border-slate-300 bg-white/60 px-8 py-16 text-center">
-                  <h2 className="text-2xl font-semibold text-slate-900">Explore top ZIP codes by what matters most to you</h2>
-                  <p className="mx-auto mt-3 max-w-2xl text-base leading-7 text-slate-600">
+                <section className="mt-6 rounded-[2rem] border border-white/30 bg-black/40 backdrop-blur-lg px-8 py-16 text-center">
+                  <h2 className="text-2xl font-semibold text-white">Explore top ZIP codes by what matters most to you</h2>
+                  <p className="mx-auto mt-3 max-w-2xl text-base leading-7 font-semibold text-white">
                     Adjust the score weights and minimum thresholds to surface neighborhoods
                     that best fit your priorities across housing stability, walkability,
-                    transit, education, and affordability.
+                    transit, education, affordability, and LGBT policy.
                   </p>
                 </section>
               ) : null}
@@ -1191,8 +1100,8 @@ export default function App() {
 
               {searchContext ? (
                 <div className="mb-5 flex items-center justify-between">
-                  <p className="text-sm font-medium text-slate-600">{searchContext}</p>
-                  {results.length > 0 ? <p className="text-sm text-slate-500">{results.length} result(s)</p> : null}
+                  <p className="text-sm font-semibold text-white">{searchContext}</p>
+                  {results.length > 0 ? <p className="text-sm font-semibold text-white">{results.length} result(s)</p> : null}
                 </div>
               ) : null}
 
@@ -1222,34 +1131,34 @@ export default function App() {
                 </div>
               ) : !loading ? (
                 <section className="grid gap-5 lg:grid-cols-3">
-                  <article className="rounded-[2rem] border border-white/80 bg-white/85 p-6 shadow-lg shadow-slate-200/40 backdrop-blur">
+                  <article className="rounded-[2rem] border border-white/30 bg-black/40 p-6 shadow-lg shadow-slate-200/40 backdrop-blur-lg">
                     <div className="inline-flex rounded-full bg-teal-100 px-3 py-1 text-lg">
                       🔍
                     </div>
-                    <h2 className="mt-5 text-xl font-semibold text-slate-900">Search Any Neighborhood</h2>
-                    <p className="mt-3 text-base leading-7 text-slate-600">
+                    <h2 className="mt-5 text-xl font-semibold text-white">Search Any Neighborhood</h2>
+                    <p className="mt-3 text-base leading-7 font-semibold text-white">
                       Enter a ZIP code or census tract GEOID to get an instant QRoots score,
                       housing stability risk, AI summary, and interactive map.
                     </p>
                   </article>
 
-                  <article className="rounded-[2rem] border border-white/80 bg-white/85 p-6 shadow-lg shadow-slate-200/40 backdrop-blur">
+                  <article className="rounded-[2rem] border border-white/30 bg-black/40 p-6 shadow-lg shadow-slate-200/40 backdrop-blur-lg">
                     <div className="inline-flex rounded-full bg-indigo-100 px-3 py-1 text-lg">
                       🧭
                     </div>
-                    <h2 className="mt-5 text-xl font-semibold text-slate-900">Explore by What Matters</h2>
-                    <p className="mt-3 text-base leading-7 text-slate-600">
+                    <h2 className="mt-5 text-xl font-semibold text-white">Explore by What Matters</h2>
+                    <p className="mt-3 text-base leading-7 font-semibold text-white">
                       Use Explore mode to rank every ZIP code in any state by six customizable
                       dimensions including walkability, affordability, and LGBT policy.
                     </p>
                   </article>
 
-                  <article className="rounded-[2rem] border border-white/80 bg-white/85 p-6 shadow-lg shadow-slate-200/40 backdrop-blur">
+                  <article className="rounded-[2rem] border border-white/30 bg-black/40 p-6 shadow-lg shadow-slate-200/40 backdrop-blur-lg">
                     <div className="inline-flex rounded-full bg-emerald-100 px-3 py-1 text-lg">
                       🤖
                     </div>
-                    <h2 className="mt-5 text-xl font-semibold text-slate-900">AI-Powered Insights</h2>
-                    <p className="mt-3 text-base leading-7 text-slate-600">
+                    <h2 className="mt-5 text-xl font-semibold text-white">AI-Powered Insights</h2>
+                    <p className="mt-3 text-base leading-7 font-semibold text-white">
                       Every ZIP search generates a plain-language neighborhood summary powered
                       by OpenAI, plus contextual resource links tailored to that location.
                     </p>
@@ -1260,14 +1169,14 @@ export default function App() {
           )}
         </main>
 
-        <footer className="mt-10 rounded-[2rem] border border-white/70 bg-white/70 px-8 py-6 shadow-sm shadow-slate-200/40">
-          <p className="text-sm leading-7 text-slate-500">
+        <footer className="mt-10 rounded-[2rem] border border-white/70 bg-black/40 px-8 py-6 shadow-sm shadow-slate-200/40 backdrop-blur-lg">
+          <p className="text-sm leading-7 font-semibold text-white">
             QRoots is designed to help people make informed decisions about where to live and
             to support housing intervention efforts. Scores are advisory and reflect
             neighborhood-level patterns, not individual circumstances. Data sources: Census ACS 5-Year Estimates, Princeton Eviction Lab, CDC PLACES 2025, 
             Walk Score, HUD Fair Market Rent, Movement Advancement Project (MAP).
           </p>
-          <p className="mt-3 text-sm leading-7 text-slate-500">
+          <p className="mt-3 text-sm leading-7 font-semibold text-white">
             Eviction data reflects 2016 validated records. Walk Score data reflects city-level
             averages. QRoots composite score weighted: Housing Stability 40%, Walkability 20%,
             Transit 15%, Education 15%, Affordability 10%. LGBT Policy score reflects
@@ -1278,10 +1187,21 @@ export default function App() {
             href="https://github.com/timothytroyhollis-ctrl/QRoots"
             target="_blank"
             rel="noreferrer"
-            className="mt-4 inline-flex text-sm font-medium text-teal-700 transition hover:text-teal-800"
+            className="mt-4 inline-flex text-sm font-medium text-amber-400 transition hover:text-amber-300"
           >
             View the GitHub repository →
           </a>
+          <div className="mt-4 border-t border-slate-200 pt-4 text-center text-xs font-semibold text-white">
+            Built with OpenAI Codex — see the full 40+ prompt log{" "}
+            <a
+              href="https://github.com/timothytroyhollis-ctrl/QRoots/blob/main/docs/codex-prompts.md"
+              target="_blank"
+              rel="noreferrer"
+              className="font-medium text-amber-400 transition hover:text-amber-300"
+            >
+              here
+            </a>
+          </div>
         </footer>
       </div>
     </div>
