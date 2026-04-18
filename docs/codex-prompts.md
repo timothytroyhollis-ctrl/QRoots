@@ -1597,4 +1597,59 @@ frosted glass cards, a tree background image, copper/amber accents, and bold whi
 - Score colors: neutral blue retained from Prompt 045
 - All features from Prompts 038-047 preserved throughout visual overhaul
 
+**Next:** Prompt 062 — Weight-Aware AI Summary and Explorer Priority Inputs
+
+---
+
+## Prompt 062 — Weight-Aware AI Summary and Explorer Priority Inputs
+**Date:** 2026-04-17
+**Purpose:** Two changes: replace the Explorer minimum score inputs with priority
+percentage inputs so users can weight what matters to them, and update the AI
+summary endpoint to focus on the user's high-priority dimensions.
+
+**Frontend changes (App.jsx — manual edits, no Codex):**
+Replaced the min score inputs grid with a Priority % grid reusing exploreWeights
+state. Added handleWeightInput function that sets values directly without
+auto-rebalancing so users can type freely. handleExplore normalizes weights to
+sum to 100 before sending to API. Added a divider with explanatory text between
+sliders and inputs. Added helper note and Reset all to 0 button. Initialized all
+exploreWeights to 0 instead of default QRoots weights. Updated handleWeightInput
+to subtract from other fields proportionally when total exceeds 100 so users can
+type new values without manually zeroing out old ones first.
+
+**Backend changes (api/main.py — manual edits, no Codex):**
+Updated get_zip_summary signature to accept weight_housing, weight_walk,
+weight_transit, weight_education, weight_affordability, weight_lgbt as optional
+float query parameters with QRoots defaults. Added weight_labels, high_priority,
+low_priority, and weight_context logic. Updated prompt to instruct OpenAI to focus
+on high-priority dimensions (weight >= 0.25) and mention low-priority dimensions
+neutrally without framing them as weaknesses. Updated App.jsx summary fetch to
+pass current exploreWeights as query params to the summary endpoint.
+
+**Key Design Decisions:**
+- Priority inputs reuse exploreWeights state — sliders and inputs stay in sync
+- handleWeightInput uses direct set not rebalanceWeights so typing is free
+- Proportional subtraction from other fields when total exceeds 100
+- Reset button initializes all weights back to 0 for a clean slate
+- AI summary is now personalized to what the user actually cares about
+- weights >= 0.25 treated as high priority, below 0.25 treated as low priority
+- Backend defaults to standard QRoots weights when called from standard ZIP search
+
+**Real-World Discoveries:**
+- Original min score inputs were removed by Codex in Prompt 062 correctly but
+  the replacement priority inputs were not added — required manual re-addition
+- handleWeightChange auto-rebalances on every keystroke which prevented typing
+  25/25/25/25 — required separate handleWeightInput function
+- weight_labels block was accidentally pasted four times into main.py during
+  editing — required manual cleanup before commit
+
+**Results:**
+- Explorer tab shows Priority % inputs below sliders with clear divider
+- Users can type any combination of weights freely
+- Typing a new value that would exceed 100 subtracts from other fields
+  proportionally starting from the most recently set fields
+- Reset all to 0 button clears all weights instantly
+- AI summary emphasizes dimensions the user weighted at 25% or above
+- Low-weighted dimensions mentioned neutrally or omitted in summary
+
 **Next:** Final contest submission on Handshake before April 30, 2026

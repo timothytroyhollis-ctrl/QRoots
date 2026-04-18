@@ -685,8 +685,7 @@ export default function App() {
   const [zipSummary, setZipSummary] = useState("");
   const [summaryLoading, setSummaryLoading] = useState(false);
   const [exploreState, setExploreState] = useState("TX");
-  const [exploreWeights, setExploreWeights] = useState({ housing: 40, walk: 20, transit: 15, education: 15, affordability: 10, lgbt: 0 });
-  const [exploreMins, setExploreMins] = useState({ housing: 0, walk: 0, transit: 0, education: 0, affordability: 0, lgbt: 0 });
+  const [exploreWeights, setExploreWeights] = useState({ housing: 0, walk: 0, transit: 0, education: 0, affordability: 0, lgbt: 0 });
   const [exploreLimit, setExploreLimit] = useState(10);
   const [exploreLoading, setExploreLoading] = useState(false);
   const [exploreError, setExploreError] = useState("");
@@ -738,7 +737,7 @@ export default function App() {
       }
       setSummaryLoading(true);
       try {
-        const response = await fetch(`${API_BASE_URL}/summary/${searchedZip}`);
+        const response = await fetch(`${API_BASE_URL}/summary/${searchedZip}?weight_housing=${exploreWeights.housing/100}&weight_walk=${exploreWeights.walk/100}&weight_transit=${exploreWeights.transit/100}&weight_education=${exploreWeights.education/100}&weight_affordability=${exploreWeights.affordability/100}&weight_lgbt=${exploreWeights.lgbt/100}`);
         const payload = await response.json();
         if (!response.ok) throw new Error(payload.detail || "Unable to generate neighborhood summary.");
         setZipSummary(payload.summary || "");
@@ -832,10 +831,29 @@ export default function App() {
     setExploreWeights((currentWeights) => rebalanceWeights(currentWeights, key, value));
   }
 
-  function handleMinChange(key, value) {
-    const clamped = Math.max(0, Math.min(100, Number(value) || 0));
-    setExploreMins((currentMins) => ({ ...currentMins, [key]: clamped }));
-  }
+function handleWeightInput(key, value) {
+  const clamped = Math.max(0, Math.min(100, Number(value) || 0));
+  setExploreWeights((currentWeights) => {
+    const otherKeys = Object.keys(currentWeights).filter((k) => k !== key);
+    const otherTotal = otherKeys.reduce((sum, k) => sum + (Number(currentWeights[k]) || 0), 0);
+    const newTotal = clamped + otherTotal;
+    if (newTotal <= 100) {
+      return { ...currentWeights, [key]: clamped };
+    }
+    const excess = newTotal - 100;
+    const updated = { ...currentWeights, [key]: clamped };
+    let remaining = excess;
+    const keysWithValue = otherKeys.filter((k) => (Number(currentWeights[k]) || 0) > 0).reverse();
+    for (const k of keysWithValue) {
+      const current = Number(updated[k]) || 0;
+      const deduct = Math.min(current, remaining);
+      updated[k] = current - deduct;
+      remaining -= deduct;
+      if (remaining <= 0) break;
+    }
+    return updated;
+  });
+}
 
   async function handleExplore(event) {
     event.preventDefault();
@@ -843,20 +861,21 @@ export default function App() {
     setExploreError("");
     setExploreResults([]);
     try {
+      const totalWeight = Object.values(exploreWeights).reduce((sum, value) => sum + (Number(value) || 0), 0);
+      const normalizedWeights = totalWeight > 0
+        ? Object.fromEntries(
+            Object.entries(exploreWeights).map(([key, value]) => [key, ((Number(value) || 0) / totalWeight) * 100])
+          )
+        : exploreWeights;
+
       const params = new URLSearchParams({
         state_abbr: exploreState,
-        min_housing: String(exploreMins.housing),
-        min_walk: String(exploreMins.walk),
-        min_transit: String(exploreMins.transit),
-        min_education: String(exploreMins.education),
-        min_affordability: String(exploreMins.affordability),
-        min_lgbt: String(exploreMins.lgbt),
-        weight_housing: String(exploreWeights.housing / 100),
-        weight_walk: String(exploreWeights.walk / 100),
-        weight_transit: String(exploreWeights.transit / 100),
-        weight_education: String(exploreWeights.education / 100),
-        weight_affordability: String(exploreWeights.affordability / 100),
-        weight_lgbt: String(exploreWeights.lgbt / 100),
+        weight_housing: String(normalizedWeights.housing / 100),
+        weight_walk: String(normalizedWeights.walk / 100),
+        weight_transit: String(normalizedWeights.transit / 100),
+        weight_education: String(normalizedWeights.education / 100),
+        weight_affordability: String(normalizedWeights.affordability / 100),
+        weight_lgbt: String(normalizedWeights.lgbt / 100),
         limit: String(exploreLimit),
       });
       const response = await fetch(`${API_BASE_URL}/explore?${params.toString()}`);
@@ -1016,21 +1035,44 @@ export default function App() {
                     ))}
                   </div>
 
-                  <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-6">
+                  <div className="flex items-center gap-4 my-2">
+                    <div className="flex-1 border-t border-white/30" />
+                    <p className="text-xs font-semibold text-white/70 text-center px-2">
+                      Use sliders above <span className="text-amber-400">OR</span> type percentages below — they control the same weights
+                    </p>
+                    <div className="flex-1 border-t border-white/30" />
+                  </div>
+
+                  <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                     {weightConfig.map((item) => (
                       <label key={item.key} className="grid gap-2">
-                        <span className="text-sm font-semibold text-white">Min {item.label}</span>
+                        <span className="text-sm font-semibold text-white">
+                          {item.label} Priority %
+                        </span>
                         <input
                           type="number"
                           min="0"
                           max="100"
-                          value={exploreMins[item.key]}
-                          onChange={(event) => handleMinChange(item.key, event.target.value)}
-                          className="h-12 rounded-2xl border border-slate-200 bg-white px-4 text-sm text-slate-900 focus:border-teal-500 focus:outline-none"
+                          value={exploreWeights[item.key]}
+                          onChange={(event) => handleWeightInput(item.key, event.target.value)}
+                          className="h-12 rounded-2xl border border-slate-200 bg-white px-4 text-sm text-slate-900 focus:border-amber-500 focus:outline-none"
                         />
                       </label>
                     ))}
                   </div>
+
+                  <div className="flex items-center justify-between">
+  <p className="text-xs font-semibold text-white/70">
+    Weights are automatically normalized to 100%. Leave unused dimensions at 0.
+  </p>
+  <button
+    type="button"
+    onClick={() => setExploreWeights({ housing: 0, walk: 0, transit: 0, education: 0, affordability: 0, lgbt: 0 })}
+    className="rounded-full border border-white/30 bg-black/30 px-3 py-1 text-xs font-semibold text-white transition hover:bg-black/50"
+  >
+    Reset all to 0
+  </button>
+</div>
 
                   <div>
                     <button
