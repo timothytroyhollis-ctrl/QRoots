@@ -1447,4 +1447,154 @@ Updated scoreTone to return three shades of blue replacing red/amber/green.
 - Score cards no longer imply low scores mean bad neighborhoods
 - Background remains earthy green gradient
 
+**Next:** Prompt 045 — Inline AI Summary in Score Card and Neutral Blue Score Colors
+
+---
+
+## Prompt 045 — Inline AI Summary in Score Card and Neutral Blue Score Colors
+**Date:** 2026-04-14
+**Purpose:** Move the AI neighborhood summary inline into QRootsSummaryCard replacing
+the static description text, and replace red/amber/green scoreTone with neutral blue
+to remove implied value judgment from neighborhood scores.
+
+**Prompt:**
+Update app/src/App.jsx to move the AI neighborhood summary into QRootsSummaryCard.
+Replace the static description paragraph with the AI summary when available, a loading
+message when loading, or the static description as fallback. Pass summary and
+summaryLoading as props. Remove NeighborhoodSummaryCard from main render but keep
+the component definition. Also replace scoreTone to return neutral blue: below 40
+text-blue-600 bg-blue-400, 40-60 text-blue-700 bg-blue-500, above 60 text-blue-800
+bg-blue-600, all with from-blue-50 to-white and ring-blue-200.
+
+**Codex Output Summary:**
+Codex updated QRootsSummaryCard to accept summary and summaryLoading props, replaced
+the static description with conditional summary rendering, removed the standalone
+NeighborhoodSummaryCard from the render tree, and updated all three scoreTone return
+objects to neutral blue values.
+
+**Key Design Decisions:**
+- AI summary replaces static boilerplate text — more useful and more engaging
+- Neutral blue removes the implication that low scores mean bad neighborhoods
+- Static description retained as fallback for GEOID searches with no summary
+- NeighborhoodSummaryCard kept in file but not rendered — preserves option to restore
+
+**Results:**
+- AI summary appears inline under the score number on ZIP searches
+- Loading state shows inline while summary generates
+- All dimension bars, score cards, and badges now render in neutral blue
+
+**Next:** Prompt 046 — Explorer Copy Link and View Full Report Button
+
+---
+
+## Prompt 046 — Explorer Copy Link and View Full Report Button
+**Date:** 2026-04-14
+**Purpose:** Add Copy Link with fading Copied! confirmation above Explorer results,
+push explore state to browser URL, and add View Full Report button to each
+ExplorerResultCard to navigate directly into the full Search view for that ZIP.
+
+**Prompt:**
+Add Copy Link button above Explorer results grid using exploreUrlCopied state and
+navigator.clipboard. Update handleExplore to push ?explore=1&state=X&limit=Y to
+browser URL. Add View Full Report button to ExplorerResultCard as a full-width
+bg-slate-950 button that calls onViewFullReport prop with result.zip, switching
+activeTab to search and calling runSearch with that ZIP.
+
+**Codex Output Summary:**
+Codex added exploreUrlCopied state, handleCopyExploreLink function, Copy Link button
+above results grid with fading Copied! span, window.history.pushState in handleExplore,
+onViewFullReport prop on ExplorerResultCard, handleViewFullExploreReport function in
+App, and View Full Report button at bottom of each ExplorerResultCard.
+
+**Key Design Decisions:**
+- View Full Report closes the loop between Explorer discovery and Search detail view
+- Copy Link on Explorer results enables sharing specific state searches
+- onViewFullReport passed as prop to keep App state management centralized
+- runSearch called directly so map, AI summary, and tract cards all load automatically
+
+**Results:**
+- Copy Link appears above Explorer results with fading Copied! confirmation
+- View Full Report button on each card switches to Search tab and loads full ZIP view
+- Explorer URL updates to ?explore=1&state=TX&limit=10 after each search
+
+**Next:** Prompt 047 — CenterLink LGBT Community Centers Resource Link
+
+---
+
+## Prompt 047 — CenterLink LGBT Community Centers Resource Link
+**Date:** 2026-04-14
+**Purpose:** Add CenterLink LGBT community center directory as a ninth resource link
+in both ResultCard and ExplorerResultCard alongside the existing MAP state policy link.
+
+**Prompt:**
+Add a new resource entry after the existing LGBT Resources MAP entry in both ResultCard
+and ExplorerResultCard resources arrays. Label it LGBT Community Centers with href
+pointing to lgbtqcenters.org with ZIP search param when available, enabled always.
+
+**Codex Output Summary:**
+Codex added the CenterLink entry to both resources arrays with conditional ZIP-prefilled
+URL. Required two post-generation fixes: domain corrected from lgbtcenters.org to
+lgbtqcenters.org, then ZIP query param removed entirely after confirming the site does
+not support ?search= URL filtering and returns 404.
+
+**Real-World Discoveries:**
+- Original domain lgbtcenters.org returns 404 — site migrated to lgbtqcenters.org
+- lgbtqcenters.org/LGBTCenters path also returns 404 — correct URL is lgbtqcenters.org
+- Site does not support ZIP-based URL query parameters for pre-filtering results
+- Final href hardcoded to https://www.lgbtqcenters.org for both components
+
+**Key Design Decisions:**
+- CenterLink provides actionable local resource versus MAP which is policy-only
+- Always enabled since base URL works without ZIP context
+- Two LGBT resource links give users both policy context and local center access
+
+**Results:**
+- Both LGBT resources visible in Resources section on Search and Explorer cards
+- CenterLink link opens to directory landing page successfully
+
+**Next:** Prompts 048-061 — Dark Visual Overhaul
+
+---
+
+## Prompts 048-061 — Dark Visual Overhaul for Contest Submission
+**Date:** 2026-04-16 to 2026-04-17
+**Purpose:** Complete visual redesign of QRoots for contest submission. Iterative
+series of prompts transitioning from light green gradient to a dark dusk theme with
+frosted glass cards, a tree background image, copper/amber accents, and bold white text.
+
+**Prompts in this series:**
+- 048: Tree roots SVG + frosted glass cards (bg-white/20 backdrop-blur-md)
+- 049: LGBT Policy added to Explore empty state description
+- 050: Dark dusk background (slate-900 to purple-950) + copper roots (#d97706)
+- 051: Replaced SVG roots with local tree background image (public/tree-bg.jpg)
+- 052: Increased frosted glass opacity to bg-white/50 backdrop-blur-lg
+- 053: Switched cards to dark glass (bg-black/40) with white text
+- 054: Applied dark glass to ALL cards including header, footer, result cards
+- 055: Centered logo, h1, and description only — search form and tabs left-aligned
+- 056: Changed links and buttons to amber-400/amber-600 for dark background visibility
+- 057: Fixed empty Explore state card to dark glass with white text
+- 058: Fixed search results text colors to white/gray-300
+- 059: Reverted resource links to teal, changed body text to sky-200/300
+- 060: Unified all cards to dark glass + bold white text + amber-400 links
+- 061: Fixed risk tier badge pills to dark backgrounds with light text,
+       fixed inactive tab button to text-gray-300 hover:bg-white/20
+
+**Key Design Decisions:**
+- Dark dusk gradient anchors the roots/nature theme more dramatically than light green
+- Tree background image (public/tree-bg.jpg) provides literal roots visual
+- Frosted glass cards (bg-black/40 backdrop-blur-lg) maintain legibility over image
+- Amber/gold accent color chosen for links and buttons — warm, visible on dark
+- Risk tier badges darkened to match overall dark glass aesthetic
+- Logo centered for visual impact, search kept left-aligned for usability
+
+**Final State after Prompt 061:**
+- Background: dark gradient with tree background image fixed to bottom center
+- Cards: bg-black/40 backdrop-blur-lg throughout
+- Text: text-white font-semibold for primary, text-gray-300 for secondary
+- Links: amber-400 for resource links, teal retained for some navigation links
+- Buttons: bg-amber-600 for primary actions
+- Risk badges: dark tinted backgrounds with light text
+- Score colors: neutral blue retained from Prompt 045
+- All features from Prompts 038-047 preserved throughout visual overhaul
+
 **Next:** Final contest submission on Handshake before April 30, 2026
