@@ -602,8 +602,8 @@ function ExplorerResultCard({ result, rank, onViewFullReport }) {
           <h2 className="text-white text-3xl font-semibold mt-2">{result.zip}, {result.state_abbr}</h2>
         </div>
         <div className="text-right">
-          <p className="text-white text-xs font-semibold uppercase tracking-[0.24em]">Custom Score</p>
-          <p className={`mt-2 text-3xl font-bold ${scoreTone(result.custom_score).text}`}>{formatScore(result.custom_score)}</p>
+          <p className="text-white text-xs font-semibold uppercase tracking-[0.24em]">{result.custom_score > 0 ? "Custom Score" : "QRoots Score"}</p>
+          <p className={`mt-2 text-3xl font-bold ${scoreTone(result.custom_score || result.avg_qroots_score).text}`}>{formatScore(result.custom_score || result.avg_qroots_score)}</p>
         </div>
       </div>
       <div className="mt-5 rounded-2xl bg-black/30 px-4 py-3 text-white font-semibold text-sm">
@@ -862,11 +862,11 @@ function handleWeightInput(key, value) {
     setExploreResults([]);
     try {
       const totalWeight = Object.values(exploreWeights).reduce((sum, value) => sum + (Number(value) || 0), 0);
-      const normalizedWeights = totalWeight > 0
-        ? Object.fromEntries(
-            Object.entries(exploreWeights).map(([key, value]) => [key, ((Number(value) || 0) / totalWeight) * 100])
-          )
-        : exploreWeights;
+const normalizedWeights = totalWeight > 0
+  ? Object.fromEntries(
+      Object.entries(exploreWeights).map(([key, value]) => [key, ((Number(value) || 0) / totalWeight) * 100])
+    )
+  : { housing: 40, walk: 20, transit: 15, education: 15, affordability: 10, lgbt: 0 };
 
       const params = new URLSearchParams({
         state_abbr: exploreState,
