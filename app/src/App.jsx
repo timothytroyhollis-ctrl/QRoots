@@ -1248,7 +1248,7 @@ const normalizedWeights = totalWeight > 0
                     </div>
                     <h2 className="mt-5 text-xl font-semibold text-white">Explore by What Matters</h2>
                     <p className="mt-3 text-base leading-7 font-semibold text-white">
-                      Use Explore mode to pick a state, choose your top N matches, adjust six
+                      Use Explore mode to pick a state, choose your top 5,10, or 25 matches, adjust six
                       dimension weights with sliders or direct percentage inputs, see a custom-
                       weighted ranking, and open Find Housing links on every result.
                     </p>
