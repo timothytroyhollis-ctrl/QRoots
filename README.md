@@ -8,9 +8,14 @@ QRoots is a neighborhood decision-support tool that combines housing stability r
 
 - ZIP code and census tract search
 - QRoots composite score on a 0-100 scale
-- Five dimension scores: Housing Stability, Walkability, Transit, Education, Affordability
+- Six dimension scores: Housing Stability, Walkability, Transit, Education, Affordability, LGBT Policy
 - Interactive choropleth map for ZIP-level tract results
 - SHAP explainability showing the top 3 driving factors behind each prediction
+- AI-powered plain-language neighborhood summary via OpenAI
+- Explore mode — rank every ZIP code in any state by customizable dimension weights
+- Weight-aware AI summaries that focus on what the user prioritizes
+- Find Housing in This Area — deep links to Zillow, Realtor.com, and Apartments.com for both for-sale and for-rent listings, tied to the searched or explored ZIP code
+- Contextual resource links for housing assistance, schools, transit, mental health, and LGBT resources
 
 ## Data Sources
 
@@ -29,11 +34,15 @@ QRoots is a neighborhood decision-support tool that combines housing stability r
 - **DSC540 Quality of Life Dataset / Walk Score-derived county metrics**  
   County-level walkability, transit, bike, education, affordability, and composite quality-of-life inputs used in the QRoots score.
 
+- **Movement Advancement Project (MAP)**  
+  State-level LGBT policy tally normalized to a 0–100 score reflecting legal protections and policy environment.
+
 ## Tech Stack
 
 - **Back end:** Python and FastAPI
 - **Modeling:** XGBoost binary classification with SHAP explainability
 - **Front end:** React, Tailwind CSS, and React Leaflet / Leaflet
+- **AI:** OpenAI API for weight-aware neighborhood summaries
 - **Deployment:** Render
 
 ## How It Works
@@ -57,7 +66,7 @@ The QRoots score is calculated on a 0-100 scale using the following weighted com
 - **Education:** 15%
 - **Affordability:** 10%
 
-Housing Stability is derived from the model’s predicted housing risk, inverted so that lower predicted risk yields a higher component score. Affordability is also inverted so that lower rent burden and lower relative housing cost produce higher scores.
+Housing Stability is derived from the model's predicted housing risk, inverted so that lower predicted risk yields a higher component score. Affordability is also inverted so that lower rent burden and lower relative housing cost produce higher scores. LGBT Policy reflects state-level policy environment from MAP, normalized to 0–100.
 
 ## Live Demo
 
@@ -65,7 +74,7 @@ Housing Stability is derived from the model’s predicted housing risk, inverted
 
 ## Codex Build Process
 
-This project was built with OpenAI Codex as an end-to-end coding partner for data processing, modeling, explainability, API development, and front-end implementation. The prompt and build workflow can be reviewed in [docs/codex-prompts.md](docs/codex-prompts.md).
+This project was built with OpenAI Codex as an end-to-end coding partner for data processing, modeling, explainability, API development, and front-end implementation. The full 63-prompt build log can be reviewed in [docs/codex-prompts.md](docs/codex-prompts.md).
 
 ## Ethics
 
