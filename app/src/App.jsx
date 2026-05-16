@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { GeoJSON, MapContainer, TileLayer, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
-
+import FeedbackForm from "./components/FeedbackForm";
 
 const API_BASE_URL = "https://rootscore-api.onrender.com";
 const TIGER_TRACTS_URL = "https://rootscore-api.onrender.com/tracts/geojson";
@@ -1270,6 +1270,10 @@ const normalizedWeights = totalWeight > 0
             </>
           )}
         </main>
+        <div className="mt-6 rounded-[2rem] border border-white/30 bg-black/40 backdrop-blur-lg px-8 py-6">
+          <FeedbackForm />
+        </div>
+
 
         <footer className="mt-10 rounded-[2rem] border border-white/70 bg-black/40 px-8 py-6 shadow-sm shadow-slate-200/40 backdrop-blur-lg">
           <p className="text-sm leading-7 font-semibold text-white">
