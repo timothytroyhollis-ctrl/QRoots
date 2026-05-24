@@ -1290,7 +1290,7 @@ const normalizedWeights = totalWeight > 0
             to 0–100. Model trained on XGBoost with AUC-ROC 0.81.
           </p>
           <a
-            href="https://github.com/timothytroyhollis-ctrl/QRoots"
+            href="https://github.com/TTHollis/QRoots"
             target="_blank"
             rel="noreferrer"
             className="mt-4 inline-flex text-sm font-medium text-amber-400 transition hover:text-amber-300"
@@ -1300,7 +1300,7 @@ const normalizedWeights = totalWeight > 0
           <div className="mt-4 border-t border-slate-200 pt-4 text-center text-xs font-semibold text-white">
             Built with OpenAI Codex — see the full 64+ prompt log{" "}
             <a
-              href="https://github.com/timothytroyhollis-ctrl/QRoots/blob/main/docs/codex-prompts.md"
+              href="https://github.com/TTHollis/QRoots/blob/main/docs/codex-prompts.md"
               target="_blank"
               rel="noreferrer"
               className="font-medium text-amber-400 transition hover:text-amber-300"

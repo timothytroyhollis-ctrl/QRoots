@@ -53,7 +53,8 @@ export default function FeedbackForm() {
             width: "100%", padding: "0.6rem 0.8rem",
             marginBottom: "0.75rem", borderRadius: "8px",
             border: "1px solid #ddd", fontSize: "14px",
-            boxSizing: "border-box"
+            boxSizing: "border-box",
+            color: "#1F3864", backgroundColor: "#ffffff"
           }}
         />
         <input
@@ -64,7 +65,8 @@ export default function FeedbackForm() {
             width: "100%", padding: "0.6rem 0.8rem",
             marginBottom: "0.75rem", borderRadius: "8px",
             border: "1px solid #ddd", fontSize: "14px",
-            boxSizing: "border-box"
+            boxSizing: "border-box",
+            color: "#1F3864", backgroundColor: "#ffffff"
           }}
         />
         <textarea
@@ -76,7 +78,8 @@ export default function FeedbackForm() {
             width: "100%", padding: "0.6rem 0.8rem",
             marginBottom: "0.75rem", borderRadius: "8px",
             border: "1px solid #ddd", fontSize: "14px",
-            boxSizing: "border-box", resize: "vertical"
+            boxSizing: "border-box", resize: "vertical",
+            color: "#1F3864", backgroundColor: "#ffffff"
           }}
         />
         <button
